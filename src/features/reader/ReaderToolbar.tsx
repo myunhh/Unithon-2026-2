@@ -48,14 +48,14 @@ export function ReaderToolbar({ documentId, pageCount, currentPage, zoom, showAl
       <div className="reader-controls" role="group" aria-label="PDF 쪽과 확대/축소 조절">
         <div className="reader-control-group reader-control-group--page">
           <span className="reader-control-label">페이지</span>
-          <Button className="reader-step-button" variant="secondary" aria-label="이전 페이지" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1}>−</Button>
+          <Button className="reader-step-button" variant="secondary" aria-label="이전 페이지" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1}><span aria-hidden="true">−</span></Button>
           <label className="reader-page-input"><span className="visually-hidden">현재 페이지</span><Input aria-label="현재 페이지" type="number" min={1} max={pageCount} value={currentPage} onChange={(event) => onPageChange(Number(event.target.value))} /></label>
           <span className="reader-page-count">/ {pageCount}</span>
           <Button className="reader-step-button" variant="secondary" aria-label="다음 페이지" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage >= pageCount}>＋</Button>
         </div>
         <div className="reader-control-group reader-control-group--zoom">
           <span className="reader-control-label">확대</span>
-          <Button className="reader-step-button" variant="secondary" aria-label="축소" onClick={() => onZoomChange(zoom - 0.1)} disabled={zoom <= 0.6}>−</Button>
+          <Button className="reader-step-button" variant="secondary" aria-label="축소" onClick={() => onZoomChange(zoom - 0.1)} disabled={zoom <= 0.6}><span aria-hidden="true">−</span></Button>
           <output className="reader-zoom-value" aria-label="현재 확대율">{Math.round(zoom * 100)}%</output>
           <Button className="reader-step-button" variant="secondary" aria-label="확대" onClick={() => onZoomChange(zoom + 0.1)} disabled={zoom >= 2.4}>＋</Button>
           <Button className="reader-fit-button" variant="secondary" onClick={() => onZoomChange(1.2)} disabled={zoom === 1.2}>폭 맞춤</Button>
