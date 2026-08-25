@@ -341,7 +341,7 @@ export function ReaderPage({ documentId, onBackToLibrary, onOpenSettings }: Read
 
   return (
     <section className="reader-page" aria-label="PaperBridge PDF 리더" data-reader-mode={fixture ? 'fixture' : 'pdf'} onKeyDownCapture={handleReaderKeyDown}>
-      <div className="reader-workspace" aria-label="PDF 읽기 작업 공간">
+      <div className="reader-workspace" role="region" aria-label="PDF 읽기 작업 공간">
         <ReaderToolbar
           documentId={documentId}
           pageCount={pageCount}

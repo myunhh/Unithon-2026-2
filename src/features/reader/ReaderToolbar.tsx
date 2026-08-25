@@ -32,7 +32,7 @@ export function ReaderToolbar({ documentId, pageCount, currentPage, zoom, showAl
   const parseReady = parseStatus === 'ready'
   return (
     <>
-      <header className="reader-toolbar" aria-label="문서 도구">
+      <header className="reader-toolbar" role="toolbar" aria-label="문서 도구">
         <h1 className="visually-hidden">PDF 리더: {documentId}</h1>
         <Button className="reader-back-button" variant="secondary" onClick={onBackToLibrary}>← 보관함</Button>
         <div className="reader-context">

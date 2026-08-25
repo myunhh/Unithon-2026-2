@@ -105,7 +105,7 @@
   line-height: 16px;
 }
 
-.library-upload-boundary { color: var(--color-text-weak); }
+.library-upload-boundary { color: var(--color-text-muted); }
 
 .library-saved-card {
   display: grid;
