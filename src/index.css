@@ -1,11 +1,13 @@
 :root {
   --color-background: #f5f6f8;
+  --color-canvas: #e9eaee;
   --color-surface: #ffffff;
   --color-text: #111827;
   --color-text-muted: #6a717f;
   --color-text-weak: #9ca3af;
   --color-border: #e5e7eb;
   --color-input-border: #d1d5db;
+  --color-selection-background: #fff7c2;
   --color-success-background: #ecfdf5;
   --color-success-text: #047857;
   --color-progress-background: #eff6ff;
@@ -21,36 +23,50 @@
   background: var(--color-background);
   font-family: var(--font-sans);
   font-synthesis: none;
+  line-height: 1.5;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* { box-sizing: border-box; }
+*,
+*::before,
+*::after { box-sizing: border-box; }
 
-html { background: var(--color-background); }
+html {
+  min-width: 320px;
+  background: var(--color-background);
+  color-scheme: light;
+}
 
 body {
   min-width: 320px;
-  min-height: 100svh;
+  min-height: 100dvh;
   margin: 0;
   background: var(--color-background);
+  overflow-x: clip;
+  word-break: keep-all;
+}
+
+::selection {
+  background: var(--color-selection-background);
+  color: var(--color-text);
 }
 
 button,
-input { font: inherit; }
+input,
+textarea,
+select { font: inherit; }
 
 button,
 a,
 input,
-[role='button'] { -webkit-tap-highlight-color: transparent; }
+[role='button'],
+[role='tab'] { -webkit-tap-highlight-color: transparent; }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-[role='button']:focus-visible {
+:where(button, a, input, textarea, select, [role='button'], [role='tab']):focus-visible {
   outline: 2px solid var(--color-text);
-  outline-offset: 4px;
+  outline-offset: 3px;
 }
 
 .section-label,
@@ -77,9 +93,12 @@ input:focus-visible,
   font-weight: 600;
   line-height: 20px;
   text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
 
 .button:hover:not(:disabled) { background: var(--color-text); }
+
+.button:active:not(:disabled) { transform: translateY(1px); }
 
 .button:disabled {
   border-color: var(--color-text-weak);
@@ -114,7 +133,9 @@ input:focus-visible,
   line-height: 20px;
 }
 
-.input:disabled { background: var(--color-background); color: var(--color-text-muted); }
+.input::placeholder { color: var(--color-text-muted); opacity: 1; }
+.input:focus-visible { border-color: var(--color-text); }
+.input:disabled { background: var(--color-background); color: var(--color-text-muted); cursor: not-allowed; }
 
 .status-badge {
   display: inline-flex;
@@ -175,14 +196,16 @@ input:focus-visible,
 
 .alert {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  min-width: 0;
   padding: 12px;
   border: 1px solid transparent;
   border-radius: 8px;
   font-size: 14px;
   line-height: 20px;
+  overflow-wrap: anywhere;
 }
 
 .alert--info {
@@ -231,5 +254,12 @@ input:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .button:active:not(:disabled) { transform: none; }
 }
