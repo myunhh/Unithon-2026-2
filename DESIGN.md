@@ -1,139 +1,162 @@
-# [**DESIGN.md](http://DESIGN.md) — 화면 설계 기준**
+# PaperBridge UI design contract
 
-이 문서는 프로젝트의 모든 화면이 공유하는 시각·구조 기준이다. 새 화면을 만들 때는 이 문서를 먼저 읽고, 여기 없는 규칙만 화면별 문서에 적는다.
+This document is the implementation contract for frontend visual work. The live
+[`UNITHON_REAL`](https://www.figma.com/design/L5dyIKxukj0L2SHCPmFdSZ/UNITHON_REAL?t=tfxwzzdGDQO248bw-0)
+Figma file is authoritative when it differs from this document. Update this file
+before introducing a token or shared primitive.
 
-지향점은 하나다. **작업 도구 같은 밀도, 절제된 색, 명확한 상태 표현.** 장식은 목표가 아니다. 사용자가 지금 무엇이 일어나고 있는지, 다음에 무엇을 해야 하는지 즉시 알 수 있으면 성공이다.
+## 1. Reference and confidence
 
-## **1. 디자인 원칙**
+- Figma file: `UNITHON_REAL` (`L5dyIKxukj0L2SHCPmFdSZ`).
+- Primary application board: `PaperPilot — Screens`, node `281:90`, measured
+  `1707 × 9788`, vertical auto-layout with 48px frame padding and gap.
+- Readable live-Chrome evidence:
+  `.omo/teams/team-b70c30a3/artifacts/FEFIGMA-board-50-far-top.png` confirms
+  `01 · Library — 목록`; `FEFIGMA-board-50-center.png` confirms Reader selection,
+  page-job progress, and Chat states.
+- Route-to-frame fidelity is strict for Library and Reader frames that are readable
+  in those captures. Landing, Login, Settings, and Account have no proven direct
+  frame mapping; they use the same measured system without claiming pixel-level
+  page correspondence.
+- Exact child node IDs, font metadata, and several hexadecimal values remain
+  `OPEN`. Qualitative values must not be upgraded to exact values without a new
+  Figma inspection or sampled capture recorded in the manifest.
 
-1. **한 화면에서 끝낸다.** 하나의 작업(입력 → 실행 → 결과 → 다음 행동)을 여러 메뉴로 흩뜨리지 않는다.
-2. **증거가 먼저다.** 요약 문장이나 AI 설명보다 원본 데이터, 실패 지점, 기대값/실제값을 먼저 보여준다.
-3. **색만으로 상태를 전달하지 않는다.** 배지에는 항상 문구를 함께 넣는다. (`진행 중`, `완료`, `실패`, `오류`)
-4. **운영 도구처럼 보이게 한다.** 장식용 그래디언트, 큰 히어로, 과한 그림자, 마케팅 문구를 쓰지 않는다.
-5. **위험한 확신을 피한다.** "품질 보장", "전부 정상" 같은 문구 대신 실제로 검증한 범위만 적는다.
-6. **빈 상태는 한 줄이다.** 큰 일러스트 대신 `아직 결과가 없습니다.` 같은 한 문장으로 끝낸다.
+## 2. Product principles
 
-## **2. 시각 토큰**
+1. The reading surface is dominant. Navigation and metadata stay visually quiet.
+2. Density comes from compact hierarchy, not reduced legibility or tiny targets.
+3. State is always text plus color: `완료`, `진행 중`, `대기`, `실패`, `오류`.
+4. Evidence precedes AI explanation. Source text, page reference, and operation
+   state appear before generated summaries or actions.
+5. Use flat neutral surfaces and one-pixel boundaries. No decorative gradient,
+   hero artwork, glow, glass effect, or heavy shadow.
+6. Preserve user-visible behavior and contract-backed data. Figma fidelity may
+   change composition and styling, not authentication, upload, reader, or provider
+   semantics.
 
+## 3. Tokens
 
-| **항목** | **값**                                        |
-| :------ | :-------------------------------------------- |
-| 페이지 배경 | `#f5f6f8`                                    |
-| 기본 글자  | `#111827`                                    |
-| 보조 글자  | `#6a717f`                                    |
-| 약한 글자  | `#9ca3af`                                    |
-| 경계선    | `#e5e7eb`                                    |
-| 카드     | 흰색, `1px #e5e7eb`, radius `12px`             |
-| 입력     | 흰색, `1px #d1d5db`, radius `8px`              |
-| 기본 버튼  | `#111827`, 흰 글자, radius `8px`                |
-| 보조 버튼  | 흰 배경, `1px #d1d5db`, 기본 글자                   |
-| 포커스    | `#111827` 테두리 + 브라우저 outline 유지              |
-| 성공·완료  | emerald 배경/글자                                |
-| 진행 중   | blue 배경/글자                                   |
-| 주의     | amber 배경/글자                                  |
-| 실패·오류  | red 배경/글자                                    |
-| 글꼴     | Pretendard, Malgun Gothic, system sans-serif |
+The current neutral family is retained where the live capture supports it. Tokens
+marked “sample pending” are centralized so a later exact Figma sample is one edit.
 
+| Token | Value | Figma trace |
+| --- | --- | --- |
+| `--color-background` | `#f5f6f8` | Light outer field, live overview and 50% captures |
+| `--color-canvas` | `#e9eaee` | Board/screen-group field; sample pending |
+| `--color-surface` | `#ffffff` | Navigation, document, panel, and card surfaces |
+| `--color-text` | `#111827` | Primary type and dark primary controls; sample pending |
+| `--color-text-muted` | `#6a717f` | Quiet navigation, metadata, and help copy; sample pending |
+| `--color-text-weak` | `#9ca3af` | Disabled and tertiary text; sample pending |
+| `--color-border` | `#e5e7eb` | Restrained one-pixel dividers; sample pending |
+| `--color-input-border` | `#d1d5db` | Inputs and compact secondary controls; sample pending |
+| `--color-selection-background` | `#fff7c2` | Reader selected/reference text; sample pending |
+| `--color-success-background` | `#ecfdf5` | Compact green completion chips; sample pending |
+| `--color-success-text` | `#047857` | Completion text; sample pending |
+| `--color-progress-background` | `#eff6ff` | Page-job and processing chips; sample pending |
+| `--color-progress-text` | `#1d4ed8` | Processing text; sample pending |
+| `--color-warning-background` | `#fffbeb` | Warning/reference emphasis; sample pending |
+| `--color-warning-text` | `#b45309` | Warning text; sample pending |
+| `--color-error-background` | `#fef2f2` | Failure/error chip and alert field; sample pending |
+| `--color-error-text` | `#b91c1c` | Failure/error text; sample pending |
+| `--font-sans` | `Pretendard, "Malgun Gothic", ui-sans-serif, system-ui, sans-serif` | CJK-safe implementation stack; Figma family `OPEN` |
+| `--font-mono` | `ui-monospace, SFMono-Regular, Consolas, monospace` | IDs and machine-readable values only |
+| `--sidebar-width` | `224px` | 1440-wide Figma frames measure approximately 224px at 50% capture |
 
-- 간격은 4의 배수만 쓴다. 카드 내부 패딩 `20px`, 카드 사이 `16px`, 본문 여백 `32px`.
-- 숫자, 시간, 단계 번호, ID에는 `font-variant-numeric: tabular-nums`를 적용한다.
-- 그림자는 쓰지 않는다. 깊이는 경계선과 배경 대비로만 만든다.
-- 위 표에 없는 색은 새로 만들지 않는다. 필요하면 이 표를 먼저 고친다.
+- Use a 4px spacing cadence. Figma-confirmed implementation values are 8px compact
+  gaps, 16px panel gaps, 20px card/list padding, and 32px desktop content padding.
+- Type scale: 12px metadata, 14px controls/body, 16px section titles, 28px page
+  titles. Exact Figma font metrics are `OPEN`; preserve hierarchy and CJK line
+  breaking until direct font metadata is available.
+- Radius: 6px status chips, 8px controls/panels, 12px large cards/workspaces.
+  Exact radii are `OPEN`, but the reference clearly uses restrained rounding.
+- Depth comes from surface contrast and 1px borders. Do not add shadows unless a
+  later Figma node proves one.
+- Numbers, times, pages, step numbers, and IDs use tabular numerals.
 
-## **3. 레이아웃**
+## 4. Desktop composition
 
-데스크톱은 224px 고정 사이드바 + 32px 본문 여백을 기본으로 한다.
+The readable Figma frames use a 1440-class application viewport:
 
 ```text
-┌──────────────────────┬─────────────────────────────────────────────────────┐
-│ 제품명               │ 페이지 제목                                         │
-│ 서비스명             │ 한 줄 설명                                          │
-│                      │                                                     │
-│ ● 현재 메뉴          │ [ 입력 / 주요 작업            ][ 현재 상태          ]│
-│   보조 메뉴          │                                                     │
-│                      │ [ 요약  ][ 요약  ][ 요약  ][ 요약 ]                 │
-│                      │                                                     │
-│                      │ [ 상세 A                     ][ 상세 B             ]│
-│                      │ [ 전체 폭 상세                                      ]│
-└──────────────────────┴─────────────────────────────────────────────────────┘
-
+┌──────── 224px rail ────────┬──────── dominant document / task surface ───────┬── metadata ──┐
+│ PaperPilot                 │ compact page / zoom / status toolbar             │ Info Chat HL │
+│ 논문 리더                  ├───────────────────────────────────────────────────┤              │
+│                            │                                                   │ job state or │
+│ 라이브러리                 │ white document or route content                   │ selected text│
+│ active document            │                                                   │ AI response  │
+│ 설정                       │                                                   │              │
+└────────────────────────────┴───────────────────────────────────────────────────┴──────────────┘
 ```
 
-- 사이드바 항목은 최소로 유지한다. 항목이 3개 이하면 라우트를 나누지 말고 같은 페이지의 앵커로 둔다.
-- 요약 지표는 한 줄에 최대 4개. 그 이상 필요하면 지표를 줄이는 쪽을 먼저 검토한다.
-- 모바일에서는 사이드바를 상단 제품명과 텍스트 탭으로 바꾼다. 전용 내비게이션 컴포넌트를 만들지 않는다.
-- 본문 최대 폭은 강제하지 않되, 입력 폼 내부 문단은 읽기 편한 폭을 유지한다.
+- The rail is a quiet white surface. Product name and small descriptor lead;
+  navigation uses compact rows with a soft neutral active fill.
+- Library places title/help above a compact upload row, a small saved-count card,
+  and a single bordered table. It does not become a card mosaic.
+- Reader places a compact utility rail above the document. The document owns dense
+  scrolling; the application body must not become the PDF scroll owner.
+- Reader side-panel tabs are `정보`, `Chat`, and `하이라이트`. The panel shows
+  operation state, selection context, summaries, or highlights without competing
+  with the document.
+- Text selection uses pale yellow in the document and may expose a compact dark
+  action toolbar. Status text visible in the reference includes `준비 완료` and
+  green `완료` chips.
 
-## **4. 화면 상태**
+## 5. Responsive behavior
 
-모든 작업 화면은 아래 다섯 상태를 같은 구조로 표현한다. 상태가 바뀌어도 카드 배치는 유지해서 전후 비교가 가능해야 한다.
+Figma child variants at 375px and 768px are not yet extractable, so these rules are
+explicit implementation extrapolations, not claimed Figma measurements.
 
-### **4.1 입력 전**
+| Viewport | Contract |
+| --- | --- |
+| `1280px+` | Keep the 224px rail. Reader keeps document and right metadata adjacent while the document remains dominant. |
+| `768px` | Replace the fixed rail with a compact sticky product header and horizontal route navigation. Reader metadata moves below the document; controls wrap without shrinking touch targets. |
+| `375px` | Use 16px outer padding, one content column, at least 44px interactive targets, and local horizontal/vertical PDF scrolling. Do not invent icon-only navigation. |
 
-- 입력 카드가 화면의 핵심이다. 필수 필드를 위에, 선택 필드를 아래에 둔다.
-- 선택 입력은 JSON 같은 구조화 포맷 대신 일반 입력으로 받는다.
-- 위험한 입력에는 경고 문구를 붙인다. 예: `승인된 스테이징 URL만 사용하세요. 운영 계정과 실결제 정보는 입력하지 마세요.`
-- 결과 영역은 한 줄 빈 상태로 둔다.
+At every width:
 
-### **4.2 진행 중**
+- No unintended page-level horizontal overflow.
+- Long Korean/English titles wrap or ellipsize intentionally.
+- Visible focus, keyboard reachability, semantic headings, labelled form controls,
+  and live-region status remain intact.
+- `prefers-reduced-motion: reduce` disables non-essential transitions and scroll
+  animation. No UI depends on motion to explain state.
 
-입력은 읽기 전용으로 유지하고 버튼 문구를 `실행 중…`으로 바꾼다.
+## 6. Shared primitives
 
-```text
-[진행 중]
-1. 준비            완료
-2. 처리            완료
-3. 실행            진행 중
-4. 결과 생성       대기
+| Primitive | Contract |
+| --- | --- |
+| `AppShell` | Figma-derived product rail, active navigation, mobile header, and one clear main landmark. |
+| `PageHeader` | Page title plus one quiet explanatory line; actions remain compact and right-aligned when space allows. |
+| `Card` | White surface, 1px neutral boundary, no shadow; flush variant for tables/lists. |
+| `Button` | 44px target; dark primary, white bordered secondary, semantic danger. Disabled state is textually and visually clear. |
+| `Field` / `Input` | Visible label, 44px input, help/error relationship exposed to assistive technology. |
+| `StatusBadge` | Compact textual state; color never carries the state alone. |
+| `Alert` | One concise condition and next action. Do not echo secrets, PDF text, or raw provider errors. |
+| `EmptyRow` | A restrained sentence in the existing surface; no decorative empty-state illustration. |
 
-```
+Create a shared component only when at least two routes use the same semantic and
+visual pattern. Page-specific composition stays local to its route.
 
-- 진행률을 가짜 퍼센트로 표현하지 않는다. 단계 목록으로 보여준다.
-- 현재 단계만 blue, 완료는 emerald, 대기는 gray.
-- 실행 ID와 시작 시각은 항상 노출한다.
+## 7. State model
 
-### **4.3 성공**
+- **Empty:** one clear next action, no fabricated content.
+- **Working:** inputs stay stable/read-only, status is `진행 중`, and real steps or
+  operation identifiers are shown rather than fake percentages.
+- **Ready:** green textual completion state; retain the same layout so state changes
+  do not cause large jumps.
+- **Failure:** red textual condition, evidence, and recovery action.
+- **System error:** distinguish transport/provider/system problems from document or
+  validation failures and state what the user can do next.
 
-- emerald 배지 + 검증한 범위를 그대로 적은 문구. 예: `선택한 시나리오 통과`
-- 실패 화면과 동일한 요약 카드 구조를 유지한다.
-- 재실행이었다면 이전 결과와 현재 결과를 `실패 → 통과`처럼 나란히 보여준다.
-- 축하 애니메이션, 과장 문구는 넣지 않는다.
+## 8. Verification contract
 
-### **4.4 실패**
-
-- 상단에 red 배지 + 어디서 어긋났는지 한 문장. 예: `5단계 중 4단계에서 기대값이 일치하지 않았습니다.`
-- 요약 카드 4개: 결과 / 소요 시간 / 완료 단계 / 오류 수.
-- 아래는 2열. 왼쪽에 증거(스크린샷·로그·원본 응답)와 캡처 시각, 오른쪽에 실패 지점·기대값·실제값.
-- 이어서 번호 붙은 재현 절차와 복사 가능한 요약 텍스트.
-- `복사`는 보조 버튼, `다시 실행`은 기본 버튼.
-
-### **4.5 시스템 오류**
-
-검증 실패와 시스템 오류를 반드시 분리한다.
-
-- `실패`: 대상의 동작이 기대값과 다름 → 사용자가 대상을 고쳐야 함
-- `오류`: 모델 응답 파싱 실패, timeout, 허용되지 않은 입력, 서버 오류 → 사용자가 실행 조건을 고쳐야 함
-
-오류 카드에는 원인 대신 **다음에 할 행동**을 적는다. 예: `URL 접근을 확인한 뒤 다시 실행하세요.`
-
-## **5. 공통 컴포넌트**
-
-이름을 고정해서 화면마다 다시 설계하지 않는다.
-
-
-| **컴포넌트**       | **용도**                |
-| :-------------- | :--------------------- |
-| `PageHeader`   | 페이지 제목과 한 줄 설명        |
-| `Card`         | 모든 블록의 기본 컨테이너        |
-| `Stat`         | 요약 지표 하나 (라벨 + 값)     |
-| `Badge`        | 상태 표시 (진행 중/완료/실패/오류) |
-| `Field`        | 라벨 + 입력 + 오류 메시지 묶음   |
-| `Input`        | 단일 행 입력               |
-| `SubmitButton` | pending 상태를 포함한 제출 버튼 |
-| `Alert`        | 입력 검증, 서버 오류, 복사 완료   |
-| `EmptyRow`     | 표에 데이터가 없을 때          |
-
-
-- 새 컴포넌트는 **두 곳 이상에서 실제로 쓸 때만** 만든다.
-- 한 번만 쓰는 블록은 페이지 파일 안에 그대로 둔다.
-- 화면 전용 컴포넌트는 화면당 2개를 넘지 않는 선에서 허용한다.
+- Source tests protect behavior; visual fidelity requires fresh browser captures.
+- Capture `/`, `/login`, `/library`, `/reader/:documentId`, `/settings`, and
+  `/account` at 375, 768, and 1280 after a production build.
+- Compare Library and Reader against the readable Figma frames. Report other routes
+  as “Figma-system adaptation; direct frame mapping OPEN.”
+- Validate default, hover/focus, keyboard, empty/loading/error, long CJK copy, local
+  scroll ownership, and reduced-motion behavior.
+- Measure production output only. Development tooling must be development-gated and
+  absent from the production bundle.
