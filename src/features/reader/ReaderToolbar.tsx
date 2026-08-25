@@ -33,6 +33,7 @@ export function ReaderToolbar({ documentId, pageCount, currentPage, zoom, showAl
   return (
     <>
       <header className="reader-toolbar">
+        <h1 className="visually-hidden">PDF 리더: {documentId}</h1>
         <Button variant="secondary" onClick={onBackToLibrary}>보관함으로 돌아가기</Button>
         <div className="reader-context">
           <span className="reader-context-label">{sourceLabel ?? '비공개 문서'}</span>
@@ -44,7 +45,7 @@ export function ReaderToolbar({ documentId, pageCount, currentPage, zoom, showAl
           <span className="reader-parse-state" aria-live="polite">{parseLabels[parseStatus]}</span>
         </div>
       </header>
-      <div className="reader-controls" aria-label="PDF 쪽과 확대/축소 조절">
+      <div className="reader-controls" role="group" aria-label="PDF 쪽과 확대/축소 조절">
         <div className="inline-actions">
           <Button variant="secondary" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1}>이전 쪽</Button>
           <label className="reader-page-input">쪽 <Input aria-label="현재 쪽" type="number" min={1} max={pageCount} value={currentPage} onChange={(event) => onPageChange(Number(event.target.value))} /></label>

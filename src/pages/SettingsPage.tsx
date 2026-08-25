@@ -95,7 +95,7 @@ export function SettingsPage() {
       </div>
       {notice ? <Alert tone={notice.tone} className="settings-notice">{notice.text}</Alert> : null}
 
-      <div className="settings-summary" aria-label="제공자 환경 요약">
+      <div className="settings-summary" role="group" aria-label="제공자 환경 요약">
         <div className="stat"><span className="stat-label">지원 제공자</span><strong className="settings-summary-value">{providers.length}</strong></div>
         <div className="stat"><span className="stat-label">현재 연결됨</span><strong className="settings-summary-value">{availableCount}</strong></div>
         <div className="stat"><span className="stat-label">인증 정보</span><strong className="settings-summary-value">원문 비공개</strong></div>
@@ -139,7 +139,7 @@ function ProviderCard({ provider, isLastTested, isConfirmingDelete, onCancelDele
       <div className="settings-card-heading">
         <div>
           <p className="settings-provider-kind">{provider.kind === 'remote-api' ? '원격 API' : '데스크톱 CLI'}</p>
-          <h3 className="settings-cli-provider-name">{provider.label}</h3>
+          <h2 className="settings-cli-provider-name">{provider.label}</h2>
         </div>
         <StatusBadge tone={statusTones[provider.status]}>{statusLabels[provider.status]}</StatusBadge>
       </div>

@@ -169,7 +169,7 @@ export function LibraryPage(_props: LibraryPageProps) {
               <h2 className="library-section-title" id="library-documents-title">문서 목록</h2>
               <p className="library-section-description">현재 페이지의 문서와 다음 데모 커서 상태입니다.</p>
             </div>
-            <div className="library-page-indicator" aria-label="데모 페이지">
+            <div className="library-page-indicator" role="group" aria-label="데모 페이지">
               <span>페이지</span>
               <strong>{isLoading || isEmpty || isError ? '—' : `${page.pageNumber} / ${page.totalPages}`}</strong>
             </div>
@@ -185,7 +185,7 @@ export function LibraryPage(_props: LibraryPageProps) {
           {isEmpty ? <EmptyState /> : null}
           {!isLoading && !isError && !isEmpty ? <DocumentRows state={state} /> : null}
 
-          <div className="library-pagination" aria-label="데모 페이지 이동">
+          <nav className="library-pagination" aria-label="데모 페이지 이동">
             <div className="library-pagination-copy">
               <span className="library-pagination-label">커서 상태</span>
               <span aria-live="polite">{hasMore ? '다음 페이지가 있습니다 · mock cursor' : state.mode === 'has-more' ? '마지막 데모 페이지입니다.' : '현재 상태에서는 사용할 수 없습니다.'}</span>
@@ -195,10 +195,10 @@ export function LibraryPage(_props: LibraryPageProps) {
                 다음 문서 페이지 보기
               </Button>
             ) : null}
-          </div>
+          </nav>
         </Card>
 
-        <div className="library-demo-stats" aria-label="문서 목록 데모 요약">
+        <div className="library-demo-stats" role="group" aria-label="문서 목록 데모 요약">
           <Stat label="현재 문서" value={isLoading || isEmpty || isError ? '—' : page.items.length} description="화면에 표시된 fixture" />
           <Stat label="페이지" value={isLoading || isEmpty || isError ? '—' : `${page.pageNumber}/${page.totalPages}`} description="mock cursor 기준" />
           <Stat label="다음 페이지" value={hasMore ? '있음' : '없음'} description="서버 연결 전 데모" />

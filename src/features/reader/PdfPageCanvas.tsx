@@ -184,7 +184,7 @@ export function ReaderFixturePage({ pageNumber, page, zoom, rotation, isKeyboard
   return (
     <article className="pdf-page reader-fixture-page" aria-label={`데모 fixture ${pageNumber}쪽`}>
       <div className="pdf-page-label">{pageNumber}쪽 · fixture</div>
-      <div className="pdf-page-surface reader-fixture-surface" data-reader-page-number={pageNumber} data-rotation={rotation} tabIndex={isKeyboardFocusable ? 0 : -1} aria-label="본문 없이 페이지 기하와 뷰포트 상태만 확인하는 데모" style={{ width: `${rotated ? height : width}px`, height: `${rotated ? width : height}px` }}>
+      <div className="pdf-page-surface reader-fixture-surface" role="document" data-reader-page-number={pageNumber} data-rotation={rotation} tabIndex={isKeyboardFocusable ? 0 : -1} aria-label="본문 없이 페이지 기하와 뷰포트 상태만 확인하는 데모" style={{ width: `${rotated ? height : width}px`, height: `${rotated ? width : height}px` }}>
         <div className="reader-fixture-sheet" aria-hidden="true">
           <span className="reader-fixture-rule reader-fixture-rule--wide" />
           <span className="reader-fixture-rule reader-fixture-rule--medium" />

@@ -136,6 +136,7 @@
   color: var(--color-text-muted);
   font-size: 14px;
   line-height: 22px;
+  word-break: keep-all;
 }
 
 .login-notice {
@@ -275,6 +276,7 @@
   color: var(--color-text-muted);
   font-size: 12px;
   line-height: 16px;
+  word-break: keep-all;
 }
 
 @media (max-width: 720px) {

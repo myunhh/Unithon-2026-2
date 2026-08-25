@@ -5,6 +5,7 @@
 }
 
 .settings-page .page-header { margin-bottom: 0; }
+.settings-page .page-description { word-break: keep-all; }
 
 .settings-demo-banner {
   display: flex;

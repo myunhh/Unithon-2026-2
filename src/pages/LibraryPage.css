@@ -57,6 +57,7 @@
   font-size: 14px;
   line-height: 20px;
   overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .library-state-card {

@@ -168,7 +168,7 @@ export function AccountPage({ onNavigate, onLoggedOut }: AccountPageProps) {
 
         {deviceSessionDemo.notice ? <p className="account-session-notice" role="status" aria-live="polite">{deviceSessionDemo.notice}</p> : null}
 
-        <div className="account-session-summary" aria-label="기기 세션 요약">
+        <div className="account-session-summary" role="group" aria-label="기기 세션 요약">
           <div>
             <span>연결된 기기</span>
             <strong>{deviceSessionDemo.sessions.filter((session) => session.status === 'active').length}개</strong>
