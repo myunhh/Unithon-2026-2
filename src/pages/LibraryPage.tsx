@@ -1,317 +1,211 @@
-import { useEffect, useState, type ChangeEvent, type DragEvent } from 'react'
+import { useState } from 'react'
 import { Alert } from '../components/Alert'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
-import { EmptyRow } from '../components/EmptyRow'
-import { Field } from '../components/Field'
-import { Input } from '../components/Input'
 import { PageHeader } from '../components/PageHeader'
 import { Stat } from '../components/Stat'
 import { StatusBadge } from '../components/StatusBadge'
-import { AppLink } from '../routes/AppLink'
 import {
-  listLibraryDocuments,
-  uploadLibraryDocument,
-  type LibraryDocument,
-} from '../domain/library'
-
-const MAX_PDF_BYTES = 50 * 1024 * 1024
+  advanceDemoPage,
+  getDemoPage,
+  LIBRARY_DEMO_MODES,
+  retryDemoList,
+  selectDemoMode,
+  type LibraryDemoMode,
+  type LibraryDemoViewState,
+} from './library/demoFixtures'
+import './LibraryPage.css'
 
 type LibraryPageProps = {
   onNavigate: (path: string) => void
 }
 
-function formatBytes(size: number): string {
-  if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`
-  return `${(size / (1024 * 1024)).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1)} MB`
+const MODE_LABELS: Readonly<Record<LibraryDemoMode, string>> = {
+  'has-more': '목록 있음',
+  empty: '빈 목록',
+  error: '오류',
+  loading: '불러오는 중',
 }
 
-function formatDate(timestamp: string): string {
-  const date = new Date(timestamp)
-  if (Number.isNaN(date.getTime())) return '날짜 없음'
-  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+const MODE_DESCRIPTIONS: Readonly<Record<LibraryDemoMode, string>> = {
+  'has-more': '문서가 있고 다음 데모 커서 페이지를 불러올 수 있습니다.',
+  empty: '문서가 아직 없는 보관함을 한 줄 빈 상태로 보여줍니다.',
+  error: '목록을 읽지 못한 상황과 안전한 재시도 안내를 보여줍니다.',
+  loading: '목록을 기다리는 동안 같은 카드 구조를 유지합니다.',
 }
 
-function stateLabel(state: LibraryDocument['parseState']) {
-  if (state === 'ready') return { label: '읽을 수 있음', tone: 'ready' as const }
-  if (state === 'failed') return { label: '처리 실패', tone: 'error' as const }
-  if (state === 'queued') return { label: '처리 대기 중', tone: 'working' as const }
-  if (state === 'uploading') return { label: '업로드 중', tone: 'working' as const }
-  return { label: '문서 분석 중', tone: 'working' as const }
+function stateAnnouncement(state: LibraryDemoViewState): string {
+  if (state.mode === 'has-more') {
+    const page = getDemoPage(state.pageIndex)
+    return `문서 목록 데모 ${page.pageNumber}페이지. ${page.items.length}개의 문서가 표시되었습니다.`
+  }
+  if (state.mode === 'empty') return '문서 목록 데모가 빈 목록 상태로 전환되었습니다.'
+  if (state.mode === 'error') return '문서 목록 데모가 오류 상태로 전환되었습니다.'
+  return '문서 목록 데모가 불러오는 중 상태로 전환되었습니다.'
 }
 
-async function validateSelectedFile(file: File): Promise<string | null> {
-  if (file.type !== 'application/pdf') return 'PDF 형식의 파일만 선택할 수 있습니다.'
-  if (file.size > MAX_PDF_BYTES) return 'PDF 파일은 50MB 이하만 업로드할 수 있습니다.'
-
-  const bytes = new Uint8Array(await file.slice(0, 5).arrayBuffer())
-  if (bytes.length < 5 || bytes[0] !== 0x25 || bytes[1] !== 0x50 || bytes[2] !== 0x44 || bytes[3] !== 0x46 || bytes[4] !== 0x2d) {
-    return '선택한 파일이 올바른 PDF인지 확인할 수 없습니다.'
-  }
-  return null
+function EmptyState() {
+  return <p className="library-empty-row">아직 업로드한 문서가 없습니다.</p>
 }
 
-export function LibraryPage({ onNavigate }: LibraryPageProps) {
-  const [documents, setDocuments] = useState<LibraryDocument[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [title, setTitle] = useState('')
-  const [selectionError, setSelectionError] = useState<string | null>(null)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [uploadedDocument, setUploadedDocument] = useState<LibraryDocument | null>(null)
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
+function LoadingState() {
+  return (
+    <div className="library-loading-state" role="status" aria-label="문서 목록을 불러오는 중">
+      <div className="library-skeleton-row" aria-hidden="true">
+        <span className="library-skeleton-line library-skeleton-line--title" />
+        <span className="library-skeleton-line library-skeleton-line--meta" />
+      </div>
+      <div className="library-skeleton-row" aria-hidden="true">
+        <span className="library-skeleton-line library-skeleton-line--title" />
+        <span className="library-skeleton-line library-skeleton-line--meta" />
+      </div>
+      <p className="library-loading-copy">문서 목록을 불러오는 중…</p>
+    </div>
+  )
+}
 
-  const refreshDocuments = async () => {
-    setIsLoading(true)
-    setLoadError(null)
-    try {
-      setDocuments(await listLibraryDocuments())
-    } catch {
-      setLoadError('문서 보관함을 불러오지 못했습니다. 연결과 로그인 상태를 확인한 뒤 다시 시도하세요.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    const controller = new AbortController()
-    let current = true
-    const loadInitialDocuments = async () => {
-      try {
-        const initialDocuments = await listLibraryDocuments(controller.signal)
-        if (current) setDocuments(initialDocuments)
-      } catch (error) {
-        if (current && (error as DOMException).name !== 'AbortError') {
-          setLoadError('문서 보관함을 불러오지 못했습니다. 연결과 로그인 상태를 확인한 뒤 다시 시도하세요.')
-        }
-      } finally {
-        if (current) setIsLoading(false)
-      }
-    }
-    void loadInitialDocuments()
-    return () => {
-      current = false
-      controller.abort()
-    }
-  }, [])
-
-  const chooseFile = async (file: File | undefined) => {
-    setSelectionError(null)
-    setUploadError(null)
-    setUploadedDocument(null)
-    if (!file) return
-
-    let error: string | null
-    try {
-      error = await validateSelectedFile(file)
-    } catch {
-      setSelectedFile(null)
-      setSelectionError('선택한 PDF를 읽지 못했습니다. 파일을 다시 선택해 주세요.')
-      return
-    }
-    if (error) {
-      setSelectedFile(null)
-      setSelectionError(error)
-      return
-    }
-
-    setSelectedFile(file)
-    if (!title.trim()) setTitle(file.name.replace(/\.pdf$/i, ''))
-  }
-
-  const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    void chooseFile(event.target.files?.[0])
-    event.target.value = ''
-  }
-
-  const onDrop = (event: DragEvent<HTMLLabelElement>) => {
-    event.preventDefault()
-    setIsDragging(false)
-    const files = event.dataTransfer.files
-    if (files.length !== 1) {
-      setSelectedFile(null)
-      setSelectionError('한 번에 PDF 파일 하나만 놓아 주세요.')
-      return
-    }
-    void chooseFile(files[0])
-  }
-
-  const upload = async () => {
-    if (!selectedFile || uploadProgress !== null) return
-    setUploadError(null)
-    setUploadedDocument(null)
-    setUploadProgress(0)
-    try {
-      const document = await uploadLibraryDocument(selectedFile, title, setUploadProgress)
-      setDocuments((current) => [document, ...current.filter((item) => item.id !== document.id)])
-      setSelectedFile(null)
-      setTitle('')
-      setUploadedDocument(document)
-      setUploadProgress(null)
-    } catch {
-      setUploadProgress(null)
-      setUploadError('이 PDF를 업로드하지 못했습니다.')
-    }
-  }
-
-  const uploadInProgress = uploadProgress !== null
-  const readyDocumentCount = documents.filter((document) => document.parseState === 'ready').length
+function DocumentRows({ state }: { state: LibraryDemoViewState }) {
+  const page = getDemoPage(state.pageIndex)
 
   return (
-    <section className="page">
+    <ul className="library-document-list" aria-label={`데모 문서 ${page.pageNumber}페이지`}>
+      {page.items.map((document) => (
+        <li className="library-document-row" key={document.key}>
+          <div className="library-document-summary">
+            <span className="library-document-name">{document.title}</span>
+            <span className="library-document-meta">{document.details}</span>
+          </div>
+          <StatusBadge tone={document.statusTone}>{document.statusLabel}</StatusBadge>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function LibraryPage(_props: LibraryPageProps) {
+  const [state, setState] = useState<LibraryDemoViewState>(() => selectDemoMode('has-more'))
+  const [announcement, setAnnouncement] = useState(() => stateAnnouncement(selectDemoMode('has-more')))
+  const page = getDemoPage(state.pageIndex)
+  const isLoading = state.mode === 'loading'
+  const isError = state.mode === 'error'
+  const isEmpty = state.mode === 'empty'
+  const hasMore = state.mode === 'has-more' && page.hasNextPage
+
+  const chooseMode = (mode: LibraryDemoMode) => {
+    const nextState = selectDemoMode(mode)
+    setState(nextState)
+    setAnnouncement(stateAnnouncement(nextState))
+  }
+
+  const showNextPage = () => {
+    const nextState = advanceDemoPage(state)
+    if (nextState.pageIndex === state.pageIndex) return
+    setState(nextState)
+    setAnnouncement(stateAnnouncement(nextState))
+  }
+
+  const retry = () => {
+    const nextState = retryDemoList()
+    setState(nextState)
+    setAnnouncement('데모 목록을 다시 표시했습니다. 첫 번째 커서 페이지입니다.')
+  }
+
+  return (
+    <section className="page library-page">
       <PageHeader
         title="문서 보관함"
-        description="PDF를 업로드하고 처리 상태를 확인한 뒤, 같은 작업 공간에서 원문을 여세요."
+        description="문서 목록과 커서 페이지 이동 상태를 확인합니다. 업로드와 실제 API 연결은 아직 열려 있지 않습니다."
       />
 
-      <div className="page-stack">
-        <section className="library-grid" aria-label="문서 업로드와 보관함 요약">
-          <Card as="form" className="upload-card" onSubmit={(event) => {
-            event.preventDefault()
-            void upload()
-          }}>
-            <div className="card-heading">
-              <div>
-                <h2 className="card-title">PDF 추가</h2>
-                <p className="card-description">파일은 비공개로 저장된 뒤 문서 분석 대기열에 들어갑니다.</p>
-              </div>
-              <StatusBadge tone={selectedFile ? 'ready' : 'warning'}>{selectedFile ? '파일 선택됨' : '파일을 선택하세요'}</StatusBadge>
+      <div className="library-page-stack">
+        <Card className="library-demo-notice" aria-label="FE-020 데모 경계">
+          <div className="library-demo-notice-copy">
+            <div className="library-demo-notice-heading">
+              <h2 className="library-section-title">문서 목록 데모</h2>
+              <StatusBadge tone="warning">MOCK ONLY · FE-020</StatusBadge>
             </div>
+            <p className="library-section-description">
+              BE-042가 준비되기 전까지 화면 상태와 커서 이동만 확인하는 고정 fixture입니다. 서버 문서나 개인 정보는 읽지 않습니다.
+            </p>
+          </div>
+        </Card>
 
-            <div className="upload-fields">
-              <Field htmlFor="document-title" label="문서 제목" optional>
-                <Input
-                  id="document-title"
-                  value={title}
-                  maxLength={240}
-                  onChange={(event) => setTitle(event.target.value)}
-                  disabled={uploadInProgress}
-                />
-              </Field>
-
-              <Field
-                label="PDF 파일"
-                help="PDF만 가능하며 최대 50MB까지 업로드할 수 있습니다."
-                helpId="pdf-file-help"
-                error={selectionError}
-                errorId="file-selection-error"
-              >
-                <label
-                  className="file-dropzone"
-                  data-dragging={isDragging}
-                  htmlFor="pdf-file"
-                  onDragEnter={(event) => {
-                    event.preventDefault()
-                    setIsDragging(true)
-                  }}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={onDrop}
-                >
-                  <span className="file-dropzone-title">{selectedFile ? selectedFile.name : '업로드할 PDF를 선택하세요'}</span>
-                  <span className="file-dropzone-copy">
-                    {selectedFile ? `${formatBytes(selectedFile.size)} · 업로드 준비됨` : '파일을 여기에 놓거나 파일 선택기를 사용하세요.'}
-                  </span>
-                  <Input
-                    className="visually-hidden"
-                    id="pdf-file"
-                    type="file"
-                    accept="application/pdf"
-                    aria-describedby={selectionError ? 'file-selection-error' : 'pdf-file-help'}
-                    onChange={onFileChange}
-                    disabled={uploadInProgress}
-                  />
-                </label>
-              </Field>
-            </div>
-
-            <div className="form-actions">
-              <Button type="submit" disabled={!selectedFile || uploadInProgress}>
-                {uploadInProgress ? '업로드 중…' : 'PDF 업로드'}
-              </Button>
-            </div>
-          </Card>
-
-          <Card as="aside" className="library-summary" aria-label="보관함 요약">
-            <div className="card-heading">
-              <div>
-                <h2 className="card-title">보관함 상태</h2>
-                <p className="card-description">현재 문서 처리 상태입니다.</p>
-              </div>
-            </div>
-            <div className="stat-grid">
-              <Stat label="저장된 문서" value={documents.length} description="비공개 PDF 기록" />
-              <Stat label="읽을 수 있는 문서" value={readyDocumentCount} description="문서 분석 완료" />
-            </div>
-          </Card>
-        </section>
-
-        {uploadInProgress ? (
-          <Card className="workflow-card" role="status" aria-live="polite">
-            <div className="workflow-heading">
-              <div>
-                <h2 className="card-title">업로드 진행 중</h2>
-                <p className="card-description">선택한 파일을 전송하고 있습니다. 문서 기록이 생성될 때까지 이 페이지를 열어 두세요.</p>
-              </div>
-              <StatusBadge tone="working">진행 중</StatusBadge>
-            </div>
-            <ol className="workflow-steps">
-              <li data-state="complete"><span className="step-number">1</span><span>파일 선택</span><StatusBadge tone="ready">완료</StatusBadge></li>
-              <li data-state="current"><span className="step-number">2</span><span>파일 전송</span><StatusBadge tone="working">진행 중</StatusBadge></li>
-              <li data-state="pending"><span className="step-number">3</span><span>문서 분석 대기열 등록</span><span className="step-status">대기</span></li>
-            </ol>
-          </Card>
-        ) : null}
-        {uploadedDocument ? (
-          <Alert tone="success">
-            <span><strong>업로드 완료.</strong> {uploadedDocument.title}이(가) 비공개 보관함에 추가되었습니다. 다음 단계로 리더에서 문서를 여세요.</span>
-            <AppLink className="button button--secondary" href={`/reader/${encodeURIComponent(uploadedDocument.id)}`} onNavigate={onNavigate}>리더에서 열기</AppLink>
-          </Alert>
-        ) : null}
-        {uploadError ? (
-          <Alert tone="error">
-            <span><strong>업로드가 끝나지 않았습니다.</strong> {uploadError} 암호화되지 않은 50MB 이하의 PDF인지 확인한 뒤 다시 시도하세요.</span>
-          </Alert>
-        ) : null}
-
-        <Card as="section" flush className="document-list" aria-labelledby="documents-title" aria-busy={isLoading}>
-          <div className="document-list-header">
+        <Card className="library-state-card" aria-labelledby="library-state-title">
+          <div className="library-card-heading">
             <div>
-                <h2 className="card-title" id="documents-title">문서 목록</h2>
-                <p className="card-description">원본 파일과 현재 분석 상태입니다.</p>
+              <h2 className="library-section-title" id="library-state-title">상태 데모</h2>
+              <p className="library-section-description">버튼을 선택하면 목록 카드가 해당 상태로 바뀝니다.</p>
             </div>
-            <Button variant="secondary" onClick={() => void refreshDocuments()} disabled={isLoading}>{isLoading ? '불러오는 중…' : '새로고침'}</Button>
+            <StatusBadge tone={isError ? 'error' : isLoading ? 'working' : isEmpty ? 'warning' : 'ready'}>
+              {MODE_LABELS[state.mode]}
+            </StatusBadge>
           </div>
 
-          {isLoading ? <EmptyRow role="status">문서를 불러오는 중…</EmptyRow> : null}
-          {loadError && !isLoading ? (
-            <Alert className="document-list-alert" tone="error">
-              <span>{loadError}</span>
-              <Button variant="secondary" onClick={() => void refreshDocuments()}>다시 시도</Button>
+          <div className="library-state-controls" role="group" aria-label="문서 목록 데모 상태 선택">
+            {LIBRARY_DEMO_MODES.map((mode) => (
+              <Button
+                className="library-state-button"
+                key={mode}
+                variant={state.mode === mode ? 'primary' : 'secondary'}
+                aria-pressed={state.mode === mode}
+                onClick={() => chooseMode(mode)}
+              >
+                {MODE_LABELS[mode]}
+              </Button>
+            ))}
+          </div>
+          <p className="library-state-description" aria-live="polite">{MODE_DESCRIPTIONS[state.mode]}</p>
+        </Card>
+
+        <Card
+          as="section"
+          flush
+          className="library-document-card"
+          aria-labelledby="library-documents-title"
+          aria-busy={isLoading}
+        >
+          <div className="library-document-header">
+            <div>
+              <h2 className="library-section-title" id="library-documents-title">문서 목록</h2>
+              <p className="library-section-description">현재 페이지의 문서와 다음 데모 커서 상태입니다.</p>
+            </div>
+            <div className="library-page-indicator" aria-label="데모 페이지">
+              <span>페이지</span>
+              <strong>{isLoading || isEmpty || isError ? '—' : `${page.pageNumber} / ${page.totalPages}`}</strong>
+            </div>
+          </div>
+
+          {isLoading ? <LoadingState /> : null}
+          {isError ? (
+            <Alert className="library-document-alert" tone="error">
+              <span><strong>목록을 불러오지 못했습니다.</strong> 데모 오류 상태입니다. 다시 시도하면 첫 페이지로 돌아갑니다.</span>
+              <Button variant="secondary" onClick={retry}>다시 시도</Button>
             </Alert>
           ) : null}
-          {!isLoading && !loadError && documents.length === 0 ? <EmptyRow>아직 업로드한 문서가 없습니다. 위에서 PDF를 추가해 보세요.</EmptyRow> : null}
-          {!isLoading && !loadError && documents.map((document) => {
-            const state = stateLabel(document.parseState)
-            return (
-              <article className="document-row" key={document.id}>
-                <div className="document-summary">
-                  <span className="document-name">{document.title}</span>
-                  <span className="document-meta">
-                    {document.originalFileName} · {formatBytes(document.sizeBytes)} · {document.pageCount > 0 ? `${document.pageCount}쪽` : '쪽 수 확인 중'} · 마지막 수정 {formatDate(document.updatedAt)}
-                  </span>
-                </div>
-                <div className="document-actions">
-                  <StatusBadge tone={state.tone}>{state.label}</StatusBadge>
-                  <AppLink className="button button--secondary document-open-link" href={`/reader/${encodeURIComponent(document.id)}`} onNavigate={onNavigate}>리더에서 열기</AppLink>
-                </div>
-              </article>
-            )
-          })}
+          {isEmpty ? <EmptyState /> : null}
+          {!isLoading && !isError && !isEmpty ? <DocumentRows state={state} /> : null}
+
+          <div className="library-pagination" aria-label="데모 페이지 이동">
+            <div className="library-pagination-copy">
+              <span className="library-pagination-label">커서 상태</span>
+              <span aria-live="polite">{hasMore ? '다음 페이지가 있습니다 · mock cursor' : state.mode === 'has-more' ? '마지막 데모 페이지입니다.' : '현재 상태에서는 사용할 수 없습니다.'}</span>
+            </div>
+            {hasMore ? (
+              <Button variant="secondary" onClick={showNextPage}>
+                다음 문서 페이지 보기
+              </Button>
+            ) : null}
+          </div>
         </Card>
+
+        <div className="library-demo-stats" aria-label="문서 목록 데모 요약">
+          <Stat label="현재 문서" value={isLoading || isEmpty || isError ? '—' : page.items.length} description="화면에 표시된 fixture" />
+          <Stat label="페이지" value={isLoading || isEmpty || isError ? '—' : `${page.pageNumber}/${page.totalPages}`} description="mock cursor 기준" />
+          <Stat label="다음 페이지" value={hasMore ? '있음' : '없음'} description="서버 연결 전 데모" />
+        </div>
       </div>
+
+      <p className="visually-hidden" role="status" aria-live="polite">{announcement}</p>
     </section>
   )
 }
