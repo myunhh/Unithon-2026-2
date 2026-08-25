@@ -1,0 +1,594 @@
+<meta charset="utf-8">
+<title>PaperPilot — Screens</title>
+<style>
+:root{
+  --bg:#f5f6f8; --text:#111827; --sub:#6b7280; --weak:#9ca3af; --line:#e5e7eb;
+  --input-line:#d1d5db;
+  --em-bg:#ecfdf5; --em-fg:#047857; --bl-bg:#eff6ff; --bl-fg:#1d4ed8;
+  --am-bg:#fffbeb; --am-fg:#b45309; --rd-bg:#fef2f2; --rd-fg:#b91c1c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaee;font-family:Pretendard,"Malgun Gothic",system-ui,sans-serif;
+  color:var(--text);font-size:13px;line-height:1.5;padding:48px;}
+.num{font-variant-numeric:tabular-nums}
+.board{display:flex;flex-direction:column;gap:48px}
+.frame{width:1440px}
+.frame-label{font-size:12px;color:#6b7280;margin-bottom:8px;letter-spacing:.02em}
+.screen{width:1440px;height:900px;background:var(--bg);display:flex;overflow:hidden;
+  border:1px solid #d8dade}
+
+.nav{width:224px;flex:0 0 224px;background:#fff;border-right:1px solid var(--line);padding:20px}
+.brand{font-weight:600;font-size:14px}
+.brand-sub{color:var(--sub);font-size:12px;margin-top:2px}
+.nav ul{list-style:none;margin-top:24px;display:flex;flex-direction:column;gap:2px}
+.nav li{height:40px;display:flex;align-items:center;padding:0 12px;border-radius:8px;color:var(--sub)}
+.nav li.on{background:#f3f4f6;color:var(--text);font-weight:500}
+.nav-foot{margin-top:auto;color:var(--weak);font-size:12px}
+
+.main{flex:1;padding:32px;overflow:hidden;display:flex;flex-direction:column;gap:16px}
+.ph h1{font-size:20px;font-weight:600}
+.ph p{color:var(--sub);margin-top:4px}
+.row{display:flex;gap:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+.card h2{font-size:14px;font-weight:600;margin-bottom:12px}
+.grow{flex:1}
+
+.badge{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;
+  font-size:12px;font-weight:500}
+.b-em{background:var(--em-bg);color:var(--em-fg)} .b-bl{background:var(--bl-bg);color:var(--bl-fg)}
+.b-am{background:var(--am-bg);color:var(--am-fg)} .b-rd{background:var(--rd-bg);color:var(--rd-fg)}
+.b-gy{background:#f3f4f6;color:var(--sub)}
+.btn{height:40px;padding:0 16px;border-radius:8px;border:1px solid #111827;background:#111827;
+  color:#fff;font-size:13px;font-weight:500;display:inline-flex;align-items:center;font-family:inherit}
+.btn2{height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--input-line);background:#fff;
+  color:var(--text);font-size:13px;display:inline-flex;align-items:center;font-family:inherit}
+.btn[disabled]{background:#9ca3af;border-color:#9ca3af}
+.inp{height:40px;border:1px solid var(--input-line);border-radius:8px;background:#fff;padding:0 12px;
+  display:flex;align-items:center;color:var(--weak);width:100%}
+.inp.filled{color:var(--text)}
+.lbl{font-size:12px;color:var(--sub);margin-bottom:4px;display:block}
+.stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+.stat .k{font-size:12px;color:var(--sub)}
+.stat .v{font-size:24px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
+.empty{color:var(--weak);padding:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--sub);font-size:12px;padding:8px 12px;
+  border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.steps{list-style:none;display:flex;flex-direction:column;gap:8px}
+.steps li{display:flex;align-items:center;gap:12px;height:32px}
+.steps .n{width:20px;color:var(--weak);font-variant-numeric:tabular-nums}
+.steps .t{flex:1}
+.alert{border-radius:8px;padding:12px;font-size:13px}
+.a-rd{background:var(--rd-bg);color:var(--rd-fg);border:1px solid #fecaca}
+.a-am{background:var(--am-bg);color:var(--am-fg);border:1px solid #fde68a}
+
+.reader{flex:1;display:flex;min-height:0}
+.pdfwrap{flex:1;background:#e9eaee;padding:24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pdftool{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+  border-radius:8px;padding:0 12px;height:40px;font-size:12px;color:var(--sub)}
+.pdftool .sep{width:1px;height:20px;background:var(--line)}
+.page{flex:1;background:#fff;border:1px solid var(--line);padding:40px 48px;position:relative;
+  overflow:hidden;font-family:Georgia,"Times New Roman",serif;font-size:12px;line-height:1.9;color:#1f2937}
+.page h3{font-size:15px;font-family:inherit;margin-bottom:4px}
+.page .meta{font-size:11px;color:var(--sub);margin-bottom:20px;font-family:Pretendard,sans-serif}
+.page p{margin-bottom:12px;text-align:justify}
+.sel{background:#dbeafe;border-radius:2px;box-shadow:0 0 0 1px #93c5fd}
+.hl{background:#fef3c7;border-radius:2px}
+.side{width:320px;flex:0 0 320px;background:#fff;border-left:1px solid var(--line);
+  display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs div{flex:1;height:40px;display:flex;align-items:center;justify-content:center;
+  color:var(--sub);font-size:12px}
+.tabs div.on{color:var(--text);font-weight:600;box-shadow:inset 0 -2px 0 #111827}
+.sbody{padding:20px;display:flex;flex-direction:column;gap:16px;overflow:hidden;flex:1}
+.sblock .k{font-size:12px;color:var(--sub);margin-bottom:4px}
+.pop{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;
+  width:380px;font-family:Pretendard,"Malgun Gothic",sans-serif;font-size:12px;line-height:1.6}
+.pop-h{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.pop-b{padding:16px}
+.pop-f{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.tbar{position:absolute;background:#111827;border-radius:8px;height:40px;display:flex;
+  align-items:center;padding:0 4px;font-family:Pretendard,sans-serif}
+.tbar span{color:#fff;font-size:12px;padding:0 12px;height:32px;display:flex;align-items:center;
+  border-radius:6px}
+.tbar .sep{width:1px;height:16px;background:#374151;padding:0}
+.ovl{background:#fff;border-left:2px solid #1d4ed8;padding:6px 10px;margin:-6px 0 12px;
+  font-family:Pretendard,sans-serif;font-size:11.5px;line-height:1.7;color:#1f2937}
+.tok{display:flex;align-items:center;gap:12px}
+.sw{width:40px;height:40px;border-radius:8px;border:1px solid var(--line)}
+</style>
+<div class="board">
+
+<!-- 01 Library -->
+<div class="frame"><div class="frame-label">01 · Library — 목록</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li class="on">라이브러리</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 연결됨</div>
+  </div>
+  <div class="main">
+    <div class="ph"><h1>라이브러리</h1><p>업로드한 논문을 다시 엽니다.</p></div>
+    <div class="row">
+      <div class="card grow" style="display:flex;gap:12px;align-items:flex-end">
+        <div style="flex:1"><span class="lbl">PDF 파일</span>
+          <div class="inp">파일을 선택하거나 여기에 끌어다 놓으세요</div></div>
+        <button class="btn">업로드</button>
+      </div>
+      <div class="card" style="width:280px">
+        <div class="stat" style="border:0;padding:0"><div class="k">저장된 논문</div><div class="v">12</div></div>
+      </div>
+    </div>
+    <div class="card grow" style="padding:0">
+      <table>
+        <thead><tr><th style="width:96px">상태</th><th>제목</th><th style="width:88px">페이지</th>
+          <th style="width:140px">마지막 열람</th><th style="width:120px">하이라이트</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge b-em">완료</span></td>
+            <td>Attention Is All You Need</td><td class="num">15</td><td class="num">2026-08-25 14:02</td><td class="num">8</td></tr>
+          <tr><td><span class="badge b-bl">파싱 중</span></td>
+            <td>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</td><td class="num">19</td><td class="num">2026-08-25 13:41</td><td class="num">0</td></tr>
+          <tr><td><span class="badge b-rd">실패</span></td>
+            <td>Scanned_Lecture_Notes_2019.pdf</td><td class="num">—</td><td class="num">2026-08-24 22:10</td><td class="num">0</td></tr>
+          <tr><td><span class="badge b-em">완료</span></td>
+            <td>Denoising Diffusion Probabilistic Models</td><td class="num">25</td><td class="num">2026-08-23 09:18</td><td class="num">21</td></tr>
+          <tr><td><span class="badge b-em">완료</span></td>
+            <td>Deep Residual Learning for Image Recognition</td><td class="num">12</td><td class="num">2026-08-21 17:55</td><td class="num">4</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div></div>
+
+<!-- 02 Library empty -->
+<div class="frame"><div class="frame-label">02 · Library — 빈 상태</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li class="on">라이브러리</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 미연결</div>
+  </div>
+  <div class="main">
+    <div class="ph"><h1>라이브러리</h1><p>업로드한 논문을 다시 엽니다.</p></div>
+    <div class="alert a-am">모델 계정이 연결되지 않았습니다. 설정에서 OpenRouter 키를 등록한 뒤 실행하세요.</div>
+    <div class="row">
+      <div class="card grow" style="display:flex;gap:12px;align-items:flex-end">
+        <div style="flex:1"><span class="lbl">PDF 파일</span>
+          <div class="inp">파일을 선택하거나 여기에 끌어다 놓으세요</div></div>
+        <button class="btn">업로드</button>
+      </div>
+    </div>
+    <div class="card grow"><div class="empty">아직 업로드한 논문이 없습니다.</div></div>
+  </div>
+</div></div>
+
+<!-- 03 Reader parsing -->
+<div class="frame"><div class="frame-label">03 · Reader — 파싱 진행 중 (업로드 직후 즉시 진입)</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li>라이브러리</li><li class="on">Attention Is All…</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 연결됨</div>
+  </div>
+  <div class="main" style="padding:0;gap:0">
+    <div class="reader">
+      <div class="pdfwrap">
+        <div class="pdftool"><span>페이지</span><span class="num" style="color:#111827">1 / 15</span>
+          <div class="sep"></div><span>100%</span><div class="sep"></div><span>폭 맞춤</span>
+          <div class="sep"></div><span class="badge b-bl">파싱 중</span></div>
+        <div class="page">
+          <h3>Attention Is All You Need</h3>
+          <div class="meta num">arXiv:1706.03762 · 15 pages</div>
+          <p>The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism.</p>
+          <p>We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train.</p>
+          <p>Recurrent models typically factor computation along the symbol positions of the input and output sequences. Aligning the positions to steps in computation time, they generate a sequence of hidden states as a function of the previous hidden state and the input for position t.</p>
+        </div>
+      </div>
+      <div class="side">
+        <div class="tabs"><div class="on">정보</div><div>Chat</div><div>하이라이트</div></div>
+        <div class="sbody">
+          <div class="sblock"><div class="k">실행 ID</div><div class="num">run_8f31c0</div></div>
+          <div class="sblock"><div class="k">시작 시각</div><div class="num">2026-08-25 14:07:02</div></div>
+          <div class="card" style="padding:16px">
+            <h2>파싱 <span class="badge b-bl" style="margin-left:4px">진행 중</span></h2>
+            <ul class="steps">
+              <li><span class="n">1</span><span class="t">업로드</span><span class="badge b-em">완료</span></li>
+              <li><span class="n">2</span><span class="t">텍스트·좌표 추출</span><span class="badge b-em">완료</span></li>
+              <li><span class="n">3</span><span class="t">블록 병합</span><span class="badge b-bl">진행 중</span></li>
+              <li><span class="n">4</span><span class="t">문장 ID 부여</span><span class="badge b-gy">대기</span></li>
+              <li><span class="n">5</span><span class="t">요약 생성</span><span class="badge b-gy">대기</span></li>
+            </ul>
+          </div>
+          <div class="sblock"><div class="k">지금 가능</div>
+            <div>PDF 표시 · 확대/축소 · 텍스트 선택 · 수동 하이라이트 · 문장 설명·번역</div></div>
+          <div class="sblock"><div class="k">파싱 후 가능</div>
+            <div style="color:var(--weak)">요약 · Chat · 페이지 번역 · 아웃라인</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 04 Selection toolbar + Explain popup -->
+<div class="frame"><div class="frame-label">04 · Reader — 문장 선택 툴바 + Explain 답변 팝업</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li>라이브러리</li><li class="on">Attention Is All…</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 연결됨</div>
+  </div>
+  <div class="main" style="padding:0;gap:0">
+    <div class="reader">
+      <div class="pdfwrap">
+        <div class="pdftool"><span>페이지</span><span class="num" style="color:#111827">3 / 15</span>
+          <div class="sep"></div><span>120%</span><div class="sep"></div><span>폭 맞춤</span>
+          <div class="sep"></div><span class="badge b-em">준비 완료</span></div>
+        <div class="page">
+          <h3>3.2 Attention</h3>
+          <div class="meta num">page 3 · block p3-b07</div>
+          <p>An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors.</p>
+          <p>The output is computed as a <span class="sel">weighted sum of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.</span> We call our particular attention "Scaled Dot-Product Attention".</p>
+          <p>The input consists of queries and keys of dimension d_k, and values of dimension d_v. We compute the dot products of the query with all keys, divide each by the square root of d_k, and apply a softmax function to obtain the weights on the values.</p>
+          <p>Instead of performing a single attention function with d_model-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values h times with different, learned linear projections.</p>
+
+          <div class="tbar" style="left:48px;top:184px">
+            <span>Explain</span><div class="sep"></div><span>Translate</span>
+            <div class="sep"></div><span>Ask</span><div class="sep"></div><span>Highlight</span>
+          </div>
+
+          <div class="pop" style="left:48px;top:236px">
+            <div class="pop-h"><span class="badge b-em">완료</span>
+              <span style="font-weight:600">Explain</span>
+              <span style="margin-left:auto;color:var(--weak)" class="num">openrouter · 1.8s</span></div>
+            <div class="pop-b">
+              <div style="color:var(--sub);margin-bottom:8px">선택 문장</div>
+              <div style="border-left:2px solid var(--line);padding-left:10px;margin-bottom:12px;color:#374151">weighted sum of the values, where the weight assigned to each value is computed by a compatibility function…</div>
+              <div>어텐션 출력은 value 벡터들의 <b>가중합</b>이다. 각 value에 붙는 가중치는 query와 대응하는 key 사이의 유사도 함수로 계산된다. 즉 “어떤 key가 지금 query와 잘 맞는가”가 그대로 “그 key의 value를 얼마나 반영할 것인가”가 된다.</div>
+              <div style="margin-top:12px;color:var(--sub)">근거 블록 · <span class="num">p3-b07</span>, <span class="num">p3-b08</span></div>
+            </div>
+            <div class="pop-f"><button class="btn2">복사</button><button class="btn2">하이라이트로 저장</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="tabs"><div class="on">정보</div><div>Chat</div><div>하이라이트</div></div>
+        <div class="sbody">
+          <div class="sblock"><div class="k">논문</div><div>Attention Is All You Need</div></div>
+          <div class="sblock"><div class="k">현재 섹션</div><div>3.2 Attention</div></div>
+          <div class="sblock"><div class="k">Provider</div>
+            <div style="display:flex;gap:8px;align-items:center">OpenRouter <span class="badge b-em">Healthy</span></div></div>
+          <div class="card" style="padding:16px">
+            <h2>최근 실행</h2>
+            <ul class="steps">
+              <li><span class="t">Explain · p3-b07</span><span class="badge b-em">완료</span></li>
+              <li><span class="t">Translate · p2-b03</span><span class="badge b-em">완료</span></li>
+              <li><span class="t">Summary</span><span class="badge b-em">완료</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 05 Page translate overlay -->
+<div class="frame"><div class="frame-label">05 · Reader — 페이지 번역 오버레이</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li>라이브러리</li><li class="on">Attention Is All…</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 연결됨</div>
+  </div>
+  <div class="main" style="padding:0;gap:0">
+    <div class="reader">
+      <div class="pdfwrap">
+        <div class="pdftool"><span>페이지</span><span class="num" style="color:#111827">3 / 15</span>
+          <div class="sep"></div><span>120%</span><div class="sep"></div><span>폭 맞춤</span>
+          <div class="sep"></div><span class="badge b-bl">페이지 번역 진행 중 · 3/4 블록</span></div>
+        <div class="page">
+          <h3>3.2 Attention</h3>
+          <div class="meta num">page 3 · 4 blocks</div>
+          <p>An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors.</p>
+          <div class="ovl">어텐션 함수는 query와 key-value 쌍의 집합을 output으로 대응시키는 함수로 설명할 수 있으며, query·key·value·output은 모두 벡터다.</div>
+          <p>The output is computed as a weighted sum of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.</p>
+          <div class="ovl">출력은 value들의 가중합으로 계산되고, 각 value의 가중치는 query와 해당 key의 적합도 함수로 결정된다.</div>
+          <p>The input consists of queries and keys of dimension d_k, and values of dimension d_v.</p>
+          <div class="ovl" style="color:var(--weak);border-left-color:var(--line)">번역 중…</div>
+          <p>Instead of performing a single attention function with d_model-dimensional keys, values and queries, we found it beneficial to linearly project them h times.</p>
+          <div class="ovl" style="color:var(--weak);border-left-color:var(--line)">대기</div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="tabs"><div class="on">정보</div><div>Chat</div><div>하이라이트</div></div>
+        <div class="sbody">
+          <div class="sblock"><div class="k">실행 ID</div><div class="num">run_a02f47</div></div>
+          <div class="sblock"><div class="k">시작 시각</div><div class="num">2026-08-25 14:21:36</div></div>
+          <div class="card" style="padding:16px">
+            <h2>페이지 번역 <span class="badge b-bl" style="margin-left:4px">진행 중</span></h2>
+            <ul class="steps">
+              <li><span class="n">1</span><span class="t">블록 수집</span><span class="badge b-em">완료</span></li>
+              <li><span class="n">2</span><span class="t">블록 1–2</span><span class="badge b-em">완료</span></li>
+              <li><span class="n">3</span><span class="t">블록 3</span><span class="badge b-bl">진행 중</span></li>
+              <li><span class="n">4</span><span class="t">블록 4</span><span class="badge b-gy">대기</span></li>
+            </ul>
+          </div>
+          <button class="btn2" style="justify-content:center">취소</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 06 Sidebar chat -->
+<div class="frame"><div class="frame-label">06 · Sidebar — 요약 / Chat 근거 블록</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li>라이브러리</li><li class="on">Attention Is All…</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 연결됨</div>
+  </div>
+  <div class="main" style="padding:0;gap:0">
+    <div class="reader">
+      <div class="pdfwrap">
+        <div class="pdftool"><span>페이지</span><span class="num" style="color:#111827">3 / 15</span>
+          <div class="sep"></div><span>120%</span><div class="sep"></div><span>폭 맞춤</span>
+          <div class="sep"></div><span class="badge b-em">준비 완료</span></div>
+        <div class="page">
+          <h3>3.2 Attention</h3>
+          <div class="meta num">page 3 · block p3-b07</div>
+          <p>An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors.</p>
+          <p class="hl">The output is computed as a weighted sum of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.</p>
+          <p>The input consists of queries and keys of dimension d_k, and values of dimension d_v. We compute the dot products of the query with all keys, divide each by the square root of d_k, and apply a softmax function.</p>
+          <p>Instead of performing a single attention function with d_model-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values h times.</p>
+        </div>
+      </div>
+      <div class="side">
+        <div class="tabs"><div>정보</div><div class="on">Chat</div><div>하이라이트</div></div>
+        <div class="sbody" style="justify-content:space-between">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card" style="padding:16px">
+              <h2>요약</h2>
+              <div style="color:var(--sub);font-size:12px;margin-bottom:8px">파싱 직후 자동 생성 · <span class="num">2026-08-25 14:09</span></div>
+              <div>RNN·CNN 없이 어텐션만으로 구성한 Transformer를 제안한다. 번역 두 과제에서 품질이 더 높고 병렬화가 쉬워 학습 시간이 크게 줄었다.</div>
+            </div>
+            <div class="sblock"><div class="k">질문 범위</div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+                <span class="badge b-gy">선택 문장</span><span class="badge b-bl">현재 섹션</span><span class="badge b-gy">논문 전체</span></div></div>
+            <div class="sblock"><div class="k">질문</div>
+              <div style="margin-top:4px">Scaled Dot-Product에서 왜 √d_k로 나누나요?</div></div>
+            <div class="card" style="padding:16px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <span class="badge b-em">완료</span><span style="color:var(--weak)" class="num">2.4s</span></div>
+              <div>d_k가 커지면 내적 값의 분산이 커져 softmax가 포화되고 기울기가 매우 작아진다. √d_k로 나눠 분산을 되돌린다.</div>
+              <div style="margin-top:12px;color:var(--sub);font-size:12px">근거 블록</div>
+              <div style="display:flex;gap:4px;margin-top:4px">
+                <span class="badge b-gy num">p3-b09</span><span class="badge b-gy num">p4-b02</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="inp">논문에 대해 질문하기</div><button class="btn">전송</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 07 Highlights -->
+<div class="frame"><div class="frame-label">07 · Sidebar — 하이라이트</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li>라이브러리</li><li class="on">Attention Is All…</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 연결됨</div>
+  </div>
+  <div class="main" style="padding:0;gap:0">
+    <div class="reader">
+      <div class="pdfwrap">
+        <div class="pdftool"><span>페이지</span><span class="num" style="color:#111827">4 / 15</span>
+          <div class="sep"></div><span>120%</span><div class="sep"></div><span>폭 맞춤</span>
+          <div class="sep"></div><span class="badge b-em">준비 완료</span></div>
+        <div class="page">
+          <h3>3.2.1 Scaled Dot-Product Attention</h3>
+          <div class="meta num">page 4 · 3 highlights</div>
+          <p>We suspect that for large values of d_k, <span class="hl">the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients.</span></p>
+          <p>To counteract this effect, we scale the dot products by 1/sqrt(d_k). Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions.</p>
+          <p><span class="hl">With a single attention head, averaging inhibits this.</span> Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.</p>
+        </div>
+      </div>
+      <div class="side">
+        <div class="tabs"><div>정보</div><div>Chat</div><div class="on">하이라이트</div></div>
+        <div class="sbody">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="color:var(--sub);font-size:12px">저장됨 <span class="num">8</span></div>
+            <span class="badge b-gy">페이지순</span>
+          </div>
+          <div class="card" style="padding:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span class="badge b-am num">p4</span><span style="color:var(--weak)" class="num">14:31</span></div>
+            <div>the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients</div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span class="badge b-am num">p4</span><span style="color:var(--weak)" class="num">14:33</span></div>
+            <div>With a single attention head, averaging inhibits this.</div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span class="badge b-am num">p3</span><span style="color:var(--weak)" class="num">14:12</span></div>
+            <div>The output is computed as a weighted sum of the values…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 08 Settings providers -->
+<div class="frame"><div class="frame-label">08 · 설정 — Provider 연결 (웹 / 데스크톱)</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li>라이브러리</li><li class="on">설정</li></ul>
+    <div class="nav-foot">데스크톱 앱 · v0.1.0</div>
+  </div>
+  <div class="main">
+    <div class="ph"><h1>모델 계정</h1><p>서비스는 모델 크레딧을 보유하지 않습니다. 본인 계정으로 실행합니다.</p></div>
+    <div class="row">
+      <div class="stat"><div class="k">셸</div><div class="v" style="font-size:16px">데스크톱 앱</div></div>
+      <div class="stat"><div class="k">사용 가능 provider</div><div class="v">2</div></div>
+      <div class="stat"><div class="k">기본 provider</div><div class="v" style="font-size:16px">OpenRouter</div></div>
+      <div class="stat"><div class="k">마지막 탐지</div><div class="v num" style="font-size:16px">14:06:58</div></div>
+    </div>
+    <div class="row grow">
+      <div class="card grow">
+        <h2>OpenRouter</h2>
+        <div style="color:var(--sub);margin-bottom:16px">사용자 소유 API key. 서버에 암호화 저장됩니다.</div>
+        <label class="lbl">API key</label>
+        <div class="inp filled num">sk-or-v1-••••••••••••••••••••••••3f9a</div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn">저장</button><button class="btn2">연결 확인</button></div>
+        <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
+          <span class="badge b-em">Healthy</span>
+          <span style="color:var(--sub)" class="num">확인 2026-08-25 14:06</span></div>
+      </div>
+      <div class="card grow">
+        <h2>구독 CLI</h2>
+        <div style="color:var(--sub);margin-bottom:16px">앱이 PATH에서 바이너리를 탐지하고 로그인 상태만 확인합니다. 로그인 정보는 서버로 전송하지 않습니다.</div>
+        <table>
+          <thead><tr><th>Provider</th><th>경로</th><th style="width:96px">상태</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Code</td><td class="num" style="color:var(--sub)">/usr/local/bin/claude</td>
+              <td><span class="badge b-em">Healthy</span></td></tr>
+            <tr><td>Codex</td><td class="num" style="color:var(--sub)">~/.local/bin/codex</td>
+              <td><span class="badge b-am">Limited</span></td></tr>
+          </tbody>
+        </table>
+        <div class="alert a-am" style="margin-top:16px">Codex는 로그인되어 있지 않습니다. 터미널에서 <span class="num">codex login</span>을 실행한 뒤 다시 탐지하세요.</div>
+        <div style="margin-top:16px"><button class="btn2">다시 탐지</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>웹에서 접속한 경우</h2>
+      <div style="color:var(--sub)">브라우저는 PC의 CLI를 실행할 수 없습니다. 구독 계정을 쓰려면 데스크톱 앱을 설치하세요. 웹에서는 OpenRouter만 선택할 수 있고 나머지는 회색으로 표시됩니다.</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 09 Failure / error -->
+<div class="frame"><div class="frame-label">09 · 상태 — 파싱 실패(대상 문제) / 시스템 오류(실행 조건 문제)</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">논문 리더</div>
+    <ul><li>라이브러리</li><li class="on">Scanned_Lecture…</li><li>설정</li></ul>
+    <div class="nav-foot">OpenRouter · 연결됨</div>
+  </div>
+  <div class="main">
+    <div class="ph"><h1>Scanned_Lecture_Notes_2019.pdf</h1>
+      <p><span class="badge b-rd">실패</span> &nbsp;5단계 중 2단계에서 추출 가능한 텍스트를 찾지 못했습니다.</p></div>
+    <div class="row">
+      <div class="stat"><div class="k">결과</div><div class="v" style="font-size:16px;color:var(--rd-fg)">실패</div></div>
+      <div class="stat"><div class="k">소요 시간</div><div class="v">7.2s</div></div>
+      <div class="stat"><div class="k">완료 단계</div><div class="v">1 / 5</div></div>
+      <div class="stat"><div class="k">오류 수</div><div class="v">1</div></div>
+    </div>
+    <div class="row grow">
+      <div class="card grow">
+        <h2>증거</h2>
+        <div style="color:var(--sub);font-size:12px;margin-bottom:8px" class="num">캡처 2026-08-25 13:58:41</div>
+        <div style="background:#f9fafb;border:1px solid var(--line);border-radius:8px;padding:12px;
+          font-size:12px;line-height:1.8" class="num">page 1 · getTextContent() items = 0<br>page 2 · getTextContent() items = 0<br>page 3 · getTextContent() items = 0<br>image xobjects = 12 / text runs = 0</div>
+        <div style="margin-top:12px;color:var(--sub)">페이지 전체가 이미지로만 구성되어 있습니다.</div>
+      </div>
+      <div class="card grow">
+        <h2>실패 지점</h2>
+        <table>
+          <tbody>
+            <tr><td style="color:var(--sub);width:96px">단계</td><td>2. 텍스트·좌표 추출</td></tr>
+            <tr><td style="color:var(--sub)">기대값</td><td class="num">text runs &gt; 0</td></tr>
+            <tr><td style="color:var(--sub)">실제값</td><td class="num" style="color:var(--rd-fg)">text runs = 0</td></tr>
+            <tr><td style="color:var(--sub)">코드</td><td class="num">PARSE_NO_TEXT_LAYER</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:16px;color:var(--sub);font-size:12px">재현 절차</div>
+        <ol style="margin:8px 0 0 20px;line-height:2">
+          <li>라이브러리에서 해당 PDF를 업로드한다.</li>
+          <li>파싱 상태가 <span class="num">PARSING</span>으로 바뀐다.</li>
+          <li>2단계에서 <span class="num">FAILED</span>로 전환된다.</li>
+        </ol>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn2">요약 복사</button><button class="btn">다시 실행</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>시스템 오류 <span class="badge b-rd" style="margin-left:4px">오류</span></h2>
+      <div class="alert a-rd">모델 응답이 60초 안에 도착하지 않았습니다. 네트워크와 OpenRouter 잔액을 확인한 뒤 다시 실행하세요.</div>
+      <div style="color:var(--sub);margin-top:12px;font-size:12px">
+        <span class="num">실패</span>는 대상 문서가 기대와 다른 경우, <span class="num">오류</span>는 실행 조건을 고쳐야 하는 경우입니다.</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 10 Foundations -->
+<div class="frame"><div class="frame-label">10 · Foundations — 토큰 · 배지 · 컴포넌트</div>
+<div class="screen">
+  <div class="nav" style="display:flex;flex-direction:column">
+    <div class="brand">PaperPilot</div><div class="brand-sub">디자인 기준</div>
+    <ul><li class="on">Foundations</li></ul>
+    <div class="nav-foot">DESIGN.md 기준</div>
+  </div>
+  <div class="main">
+    <div class="ph"><h1>Foundations</h1><p>DESIGN.md의 토큰과 공통 컴포넌트. 여기 없는 색은 만들지 않습니다.</p></div>
+    <div class="row grow">
+      <div class="card grow">
+        <h2>색</h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="tok"><div class="sw" style="background:#f5f6f8"></div><div>페이지 배경<br><span class="num" style="color:var(--sub)">#f5f6f8</span></div></div>
+          <div class="tok"><div class="sw" style="background:#111827"></div><div>기본 글자 · 기본 버튼<br><span class="num" style="color:var(--sub)">#111827</span></div></div>
+          <div class="tok"><div class="sw" style="background:#6b7280"></div><div>보조 글자<br><span class="num" style="color:var(--sub)">#6b7280</span></div></div>
+          <div class="tok"><div class="sw" style="background:#9ca3af"></div><div>약한 글자<br><span class="num" style="color:var(--sub)">#9ca3af</span></div></div>
+          <div class="tok"><div class="sw" style="background:#e5e7eb"></div><div>경계선<br><span class="num" style="color:var(--sub)">#e5e7eb</span></div></div>
+          <div class="tok"><div class="sw" style="background:#d1d5db"></div><div>입력 경계선<br><span class="num" style="color:var(--sub)">#d1d5db</span></div></div>
+        </div>
+      </div>
+      <div class="card grow">
+        <h2>상태 배지 — 색만으로 전달하지 않는다</h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="tok"><span class="badge b-bl">진행 중</span><span style="color:var(--sub)">blue · 현재 단계</span></div>
+          <div class="tok"><span class="badge b-em">완료</span><span style="color:var(--sub)">emerald · 검증한 범위만 표기</span></div>
+          <div class="tok"><span class="badge b-am">주의</span><span style="color:var(--sub)">amber · 조건 미충족</span></div>
+          <div class="tok"><span class="badge b-rd">실패</span><span style="color:var(--sub)">red · 대상이 기대와 다름</span></div>
+          <div class="tok"><span class="badge b-rd">오류</span><span style="color:var(--sub)">red · 실행 조건을 고쳐야 함</span></div>
+          <div class="tok"><span class="badge b-gy">대기</span><span style="color:var(--sub)">gray · 아직 시작 안 함</span></div>
+        </div>
+        <h2 style="margin-top:24px">타이포</h2>
+        <div>Pretendard, Malgun Gothic, system sans-serif</div>
+        <div class="num" style="color:var(--sub)">숫자·시간·ID는 tabular-nums · 0123456789</div>
+      </div>
+      <div class="card grow">
+        <h2>컴포넌트</h2>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div><span class="lbl">Field / Input — 라벨은 placeholder로 대체하지 않는다</span>
+            <div class="inp">테스트 URL</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn">생성 및 실행</button>
+            <button class="btn2">복사</button>
+            <button class="btn" disabled>실행 중…</button></div>
+          <div class="alert a-rd">URL 접근을 확인한 뒤 다시 실행하세요.</div>
+          <div><span class="lbl">Stat</span>
+            <div class="row"><div class="stat"><div class="k">소요 시간</div><div class="v">7.2s</div></div>
+              <div class="stat"><div class="k">완료 단계</div><div class="v">1 / 5</div></div></div></div>
+          <div><span class="lbl">EmptyRow</span><div class="empty">아직 결과가 없습니다.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>규칙</h2>
+      <div style="color:var(--sub)">간격은 4의 배수 · 카드 패딩 20 · 카드 사이 16 · 본문 여백 32 · 그림자 없음 · 클릭 영역 최소 40px · 요약 지표 한 줄 최대 4개 · 사이드바 224px 고정</div>
+    </div>
+  </div>
+</div></div>
+
+</div>
