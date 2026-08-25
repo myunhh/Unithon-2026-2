@@ -38,8 +38,10 @@
 .public-text-link,
 .public-footer a {
   display: inline-flex;
+  min-width: 44px;
   min-height: 44px;
   align-items: center;
+  justify-content: center;
 }
 
 .public-kicker {
@@ -158,4 +160,12 @@
   .account-grid { grid-template-columns: 1fr; }
   .public-footer { align-items: flex-start; flex-direction: column; }
   .account-signout { align-items: flex-start; flex-direction: column; }
+
+  .account-note a {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
 }
