@@ -1,8 +1,8 @@
 .login-page {
   display: grid;
-  min-height: 100svh;
+  min-height: 100dvh;
   grid-template-rows: auto 1fr;
-  padding: 24px;
+  padding: 32px;
   background: var(--color-background);
   color: var(--color-text);
 }
@@ -10,7 +10,7 @@
 .login-header {
   display: flex;
   width: min(100%, 1080px);
-  min-height: 44px;
+  min-height: 48px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -19,6 +19,9 @@
 
 .login-brand,
 .login-secondary-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
   color: var(--color-text);
   text-decoration: none;
 }
@@ -38,16 +41,16 @@
   width: min(100%, 520px);
   align-self: center;
   justify-self: center;
-  margin: 48px 0;
+  margin: 32px 0;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--color-surface);
 }
 
 .login-demo-banner {
   display: grid;
   gap: 8px;
-  padding: 16px 20px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-progress-background);
   color: var(--color-progress-text);
@@ -88,7 +91,7 @@
 }
 
 .login-tab {
-  min-height: 48px;
+  min-height: 44px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -125,9 +128,9 @@
 .login-heading h1 {
   margin: 12px 0;
   color: var(--color-text);
-  font-size: clamp(28px, 4vw, 36px);
+  font-size: clamp(28px, 3vw, 32px);
   letter-spacing: -0.035em;
-  line-height: 40px;
+  line-height: 36px;
 }
 
 .login-heading > p:last-child {
@@ -137,6 +140,7 @@
   font-size: 14px;
   line-height: 22px;
   word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .login-notice {
@@ -174,6 +178,7 @@
 
 .login-field {
   display: grid;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -195,6 +200,8 @@
   color: var(--color-text);
   line-height: 20px;
 }
+
+.login-input::placeholder { color: var(--color-text-muted); }
 
 .login-input[aria-invalid='true'] {
   border-color: var(--color-error-text);
@@ -258,6 +265,8 @@
   margin: 0;
   font-size: 12px;
   line-height: 16px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .login-help {
@@ -277,6 +286,7 @@
   font-size: 12px;
   line-height: 16px;
   word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 @media (max-width: 720px) {
@@ -285,7 +295,7 @@
   }
 
   .login-card {
-    margin: 32px 0;
+    margin: 24px 0;
   }
 
   .login-panel,

@@ -183,7 +183,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           >가입</button>
         </div>
 
-        <div className="login-panel" id="login-panel" role="tabpanel" aria-labelledby={creating ? 'signup-tab' : 'login-tab'}>
+        <div className="login-panel" id="login-panel" role="tabpanel" tabIndex={0} aria-labelledby={creating ? 'signup-tab' : 'login-tab'}>
           <div className="login-heading">
             <p className="login-kicker">계정 검증</p>
             <h1 id="login-title">{creating ? '가입 검증 데모' : '로그인 검증 데모'}</h1>
@@ -192,7 +192,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
 
           {notice ? (
             <div className={`login-notice login-notice--${notice.tone}`}>
-              <p ref={noticeRef} className="login-notice-message" role={notice.tone === 'error' ? 'alert' : 'status'} aria-live={notice.tone === 'error' ? 'assertive' : 'polite'} tabIndex={-1}>{notice.message}</p>
+              <p ref={noticeRef} className="login-notice-message" role={notice.tone === 'error' ? 'alert' : 'status'} aria-live={notice.tone === 'error' ? 'assertive' : 'polite'} aria-atomic="true" tabIndex={-1}>{notice.message}</p>
               {notice.retryable ? <button className="login-retry-button" type="button" onClick={retryDemo} disabled={pending}>{pending ? '다시 확인 중...' : '다시 시도'}</button> : null}
             </div>
           ) : null}
@@ -200,7 +200,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           <form className="login-form" id="login-form" noValidate onSubmit={handleSubmit} aria-busy={pending}>
             <div className="login-field">
               <label htmlFor="login-email">이메일 주소</label>
-              <input ref={emailRef} id="login-email" className="login-input" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={pending} required aria-required="true" aria-invalid={Boolean(errors.email)} aria-describedby={emailDescription} />
+              <input ref={emailRef} id="login-email" className="login-input" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={pending} required aria-required="true" aria-invalid={Boolean(errors.email)} aria-describedby={emailDescription} aria-errormessage={errors.email ? 'login-email-error' : undefined} />
               <p className="login-help" id="login-email-help">계정 정보는 이 데모에서 저장되지 않습니다.</p>
               {errors.email ? <p className="login-error" id="login-email-error" role="alert">{errors.email}</p> : null}
             </div>
@@ -208,7 +208,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             <div className="login-field">
               <label htmlFor="login-password">비밀번호</label>
               <div className="login-password-control">
-                <input ref={passwordRef} id="login-password" className="login-input" type={passwordVisible ? 'text' : 'password'} autoComplete={creating ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} disabled={pending} required aria-required="true" aria-invalid={Boolean(errors.password)} aria-describedby={passwordDescription} minLength={10} maxLength={128} />
+                <input ref={passwordRef} id="login-password" className="login-input" type={passwordVisible ? 'text' : 'password'} autoComplete={creating ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} disabled={pending} required aria-required="true" aria-invalid={Boolean(errors.password)} aria-describedby={passwordDescription} aria-errormessage={errors.password ? 'login-password-error' : undefined} minLength={10} maxLength={128} />
                 <button className="login-visibility-button" type="button" aria-label={passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시'} aria-pressed={passwordVisible} onClick={() => setPasswordVisible((visible) => !visible)} disabled={pending}>{passwordVisible ? '숨기기' : '표시'}</button>
               </div>
               <p className="login-help" id="login-password-help">10~128자로 입력하세요.</p>
@@ -218,7 +218,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             {creating ? (
               <div className="login-field">
                 <label htmlFor="login-confirmation">비밀번호 확인</label>
-                <input ref={confirmationRef} id="login-confirmation" className="login-input" type={passwordVisible ? 'text' : 'password'} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} required aria-required="true" aria-invalid={Boolean(errors.confirmation)} aria-describedby={confirmationDescription} minLength={10} maxLength={128} />
+                <input ref={confirmationRef} id="login-confirmation" className="login-input" type={passwordVisible ? 'text' : 'password'} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={pending} required aria-required="true" aria-invalid={Boolean(errors.confirmation)} aria-describedby={confirmationDescription} aria-errormessage={errors.confirmation ? 'login-confirmation-error' : undefined} minLength={10} maxLength={128} />
                 {errors.confirmation ? <p className="login-error" id="login-confirmation-error" role="alert">{errors.confirmation}</p> : null}
               </div>
             ) : null}
