@@ -1,42 +1,51 @@
 .settings-page {
   display: grid;
+  width: min(100%, 1120px);
   align-content: start;
   gap: 16px;
+  margin-inline: auto;
 }
 
 .settings-page .page-header { margin-bottom: 0; }
-.settings-page .page-description { word-break: keep-all; }
+.settings-page .page-description { max-width: 720px; word-break: keep-all; }
 
 .settings-demo-banner {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 8px 16px;
-  padding: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-progress-text);
+  border-radius: 8px;
   background: var(--color-progress-background);
   color: var(--color-progress-text);
   font-size: 14px;
   line-height: 20px;
 }
 
-.settings-demo-banner strong { color: var(--color-text); font-size: 14px; }
-.settings-demo-banner span { color: var(--color-progress-text); }
+.settings-demo-banner strong { color: var(--color-text); font-size: 14px; font-weight: 700; }
+.settings-demo-banner span {
+  color: var(--color-progress-text);
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
 .settings-notice { margin: 0; }
 
 .settings-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 8px;
 }
 
 .settings-summary .stat {
   display: grid;
+  min-height: 76px;
   min-width: 0;
   gap: 4px;
-  padding: 20px;
+  padding: 16px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--color-surface);
 }
 
@@ -63,6 +72,7 @@
   align-content: start;
   gap: 16px;
   min-width: 0;
+  border-radius: 8px;
 }
 
 .settings-cli-item { border-bottom: 0; }
@@ -88,6 +98,8 @@
   color: var(--color-text-muted);
   font-size: 14px;
   line-height: 20px;
+  text-wrap: pretty;
+  word-break: keep-all;
 }
 
 .settings-facts {
@@ -117,7 +129,7 @@
   gap: 8px;
 }
 
-.settings-provider-actions .button { flex: 1 1 160px; }
+.settings-provider-actions .button { min-width: 0; flex: 1 1 160px; }
 
 .settings-test-result {
   margin: 0;
@@ -142,10 +154,12 @@
 }
 
 @media (max-width: 860px) {
+  .settings-page { padding: 24px; }
   .settings-cli-list { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
+  .settings-page { padding: 16px; }
   .settings-summary { grid-template-columns: 1fr; }
   .settings-facts { grid-template-columns: 1fr; gap: 12px; }
   .settings-card-heading { align-items: start; }
