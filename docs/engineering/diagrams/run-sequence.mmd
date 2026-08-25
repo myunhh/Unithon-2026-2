@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant F as Frontend
+  participant A as API
+  participant D as DB
+  participant P as Provider
+  F->>A: POST /v1/runs + Idempotency-Key
+  A->>D: authorize + reserve budget + run/event/outbox
+  A-->>F: 202 run + events URL
+  F->>A: GET events (Last-Event-ID)
+  A->>P: execute
+  P-->>A: deltas/usage
+  A->>D: append events/citations/finalize ledger
+  A-->>F: replay + live SSE

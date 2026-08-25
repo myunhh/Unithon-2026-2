@@ -1,0 +1,4362 @@
+openapi: 3.1.0
+info:
+  title: PaperBridge API
+  version: 1.0.0-draft.1
+  summary: Contract-first API for PaperBridge web and macOS clients.
+  description: Draft target contract. The backend repository owns this file. Secret fields are write-only and are never returned.
+    All private endpoints support either the web HttpOnly session or a desktop bearer credential.
+servers:
+- url: http://127.0.0.1:8787/v1
+  description: Local development
+- url: https://api.staging.paperbridge.example/v1
+  description: Staging placeholder
+- url: https://api.paperbridge.example/v1
+  description: Production placeholder
+tags:
+- name: Operations
+- name: Session
+- name: Auth
+- name: Desktop Auth
+- name: Workspaces
+- name: Workspace Members
+- name: Documents
+- name: Annotations
+- name: Providers
+- name: Agents
+- name: Runs
+- name: Chat
+- name: Usage
+paths:
+  /health:
+    get:
+      summary: Health/readiness summary
+      operationId: getHealth
+      tags:
+      - Operations
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security: []
+  /capabilities:
+    get:
+      summary: Current account and runtime capabilities
+      operationId: getCapabilities
+      tags:
+      - Session
+      responses:
+        '200':
+          description: Capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capabilities'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: &id001
+      - webSession: []
+      - desktopBearer: []
+  /auth/session:
+    get:
+      summary: Read current web or desktop session
+      operationId: getSession
+      tags:
+      - Auth
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Log out current session
+      operationId: logout
+      tags:
+      - Auth
+      responses:
+        '204':
+          description: Session revoked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /auth/signup:
+    post:
+      summary: Create account
+      operationId: signup
+      tags:
+      - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '201':
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: []
+  /auth/login:
+    post:
+      summary: Log in with email and password
+      operationId: login
+      tags:
+      - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: []
+  /auth/password:
+    put:
+      summary: Change password
+      operationId: changePassword
+      tags:
+      - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /desktop/authorizations:
+    post:
+      summary: Start desktop PKCE authorization
+      operationId: createDesktopAuthorization
+      tags:
+      - Desktop Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesktopAuthorizationRequest'
+      responses:
+        '201':
+          description: Authorization request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesktopAuthorization'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: []
+  /desktop/token:
+    post:
+      summary: Exchange one-time desktop code
+      operationId: exchangeDesktopCode
+      tags:
+      - Desktop Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesktopTokenRequest'
+      responses:
+        '200':
+          description: Desktop credential
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesktopTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: []
+  /devices:
+    get:
+      summary: List authorized desktop installations
+      operationId: listDevices
+      tags:
+      - Desktop Auth
+      responses:
+        '200':
+          description: Device list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeviceSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /devices/{deviceId}:
+    delete:
+      summary: Revoke desktop installation
+      operationId: revokeDevice
+      tags:
+      - Desktop Auth
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: Device revoked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /workspaces:
+    get:
+      summary: List accessible workspaces
+      operationId: listWorkspaces
+      tags:
+      - Workspaces
+      parameters:
+      - &id003
+        name: cursor
+        in: query
+        schema:
+          type: string
+          maxLength: 512
+      - &id004
+        name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 30
+      responses:
+        '200':
+          description: Workspace page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspacePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    post:
+      summary: Create workspace
+      operationId: createWorkspace
+      tags:
+      - Workspaces
+      parameters:
+      - &id005
+        name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 160
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceRequest'
+      responses:
+        '201':
+          description: Workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /workspaces/{workspaceId}:
+    get:
+      summary: Read workspace
+      operationId: getWorkspace
+      tags:
+      - Workspaces
+      parameters:
+      - &id002
+        name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    patch:
+      summary: Update workspace settings
+      operationId: updateWorkspace
+      tags:
+      - Workspaces
+      parameters:
+      - *id002
+      - &id006
+        name: If-Match
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^"[0-9]+"$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkspaceRequest'
+      responses:
+        '200':
+          description: Workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Soft-delete workspace
+      operationId: deleteWorkspace
+      tags:
+      - Workspaces
+      parameters:
+      - *id002
+      responses:
+        '204':
+          description: Workspace scheduled for deletion
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /workspaces/{workspaceId}/members:
+    get:
+      summary: List members
+      operationId: listWorkspaceMembers
+      tags:
+      - Workspace Members
+      parameters:
+      - *id002
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Member page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceMemberPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /workspaces/{workspaceId}/invitations:
+    post:
+      summary: Invite member
+      operationId: createWorkspaceInvitation
+      tags:
+      - Workspace Members
+      parameters:
+      - *id002
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvitationRequest'
+      responses:
+        '201':
+          description: Invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceInvitation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /workspaces/{workspaceId}/members/{userId}:
+    patch:
+      summary: Change member role/status
+      operationId: updateWorkspaceMember
+      tags:
+      - Workspace Members
+      parameters:
+      - *id002
+      - &id007
+        name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - *id006
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRequest'
+      responses:
+        '200':
+          description: Member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Remove member
+      operationId: removeWorkspaceMember
+      tags:
+      - Workspace Members
+      parameters:
+      - *id002
+      - *id007
+      responses:
+        '204':
+          description: Member removed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /document-uploads:
+    post:
+      summary: Create direct PDF upload session
+      operationId: createDocumentUpload
+      tags:
+      - Documents
+      description: Returns a single-use signed Storage target. No raw PDF bytes pass through this endpoint in the target architecture.
+      parameters:
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentUploadRequest'
+      responses:
+        '201':
+          description: Upload session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentUpload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /document-uploads/{uploadId}/complete:
+    post:
+      summary: Complete and verify PDF upload
+      operationId: completeDocumentUpload
+      tags:
+      - Documents
+      parameters:
+      - name: uploadId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteDocumentUploadRequest'
+      responses:
+        '201':
+          description: Document accepted and parse queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /documents:
+    get:
+      summary: List workspace documents
+      operationId: listDocuments
+      tags:
+      - Documents
+      parameters:
+      - name: workspaceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/DocumentStatus'
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 200
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Document page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /documents/{documentId}:
+    get:
+      summary: Read document metadata
+      operationId: getDocument
+      tags:
+      - Documents
+      parameters:
+      - &id008
+        name: documentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    patch:
+      summary: Rename or update document metadata
+      operationId: updateDocument
+      tags:
+      - Documents
+      parameters:
+      - *id008
+      - *id006
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDocumentRequest'
+      responses:
+        '200':
+          description: Document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Soft-delete document
+      operationId: deleteDocument
+      tags:
+      - Documents
+      parameters:
+      - *id008
+      responses:
+        '204':
+          description: Document deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /documents/{documentId}/file-access:
+    get:
+      summary: Issue short-lived private PDF access
+      operationId: getDocumentFileAccess
+      tags:
+      - Documents
+      parameters:
+      - *id008
+      responses:
+        '200':
+          description: File access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileAccess'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /documents/{documentId}/parse-jobs:
+    post:
+      summary: Queue or retry document parsing
+      operationId: createParseJob
+      tags:
+      - Documents
+      parameters:
+      - *id008
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateParseJobRequest'
+      responses:
+        '202':
+          description: Parse job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParseJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /documents/{documentId}/object-graph:
+    get:
+      summary: Read object graph artifact descriptor
+      operationId: getObjectGraph
+      tags:
+      - Documents
+      parameters:
+      - *id008
+      responses:
+        '200':
+          description: Object graph descriptor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectGraphAccess'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /documents/{documentId}/pages/{pageNumber}:
+    get:
+      summary: Read parsed page projection
+      operationId: getDocumentPage
+      tags:
+      - Documents
+      parameters:
+      - *id008
+      - name: pageNumber
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Parsed page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /documents/{documentId}/annotations:
+    get:
+      summary: List annotations
+      operationId: listAnnotations
+      tags:
+      - Annotations
+      parameters:
+      - *id008
+      - name: pageNumber
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Annotation page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnotationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    post:
+      summary: Create annotation
+      operationId: createAnnotation
+      tags:
+      - Annotations
+      parameters:
+      - *id008
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnnotationRequest'
+      responses:
+        '201':
+          description: Annotation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /annotations/{annotationId}:
+    patch:
+      summary: Update annotation
+      operationId: updateAnnotation
+      tags:
+      - Annotations
+      parameters:
+      - &id009
+        name: annotationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - *id006
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAnnotationRequest'
+      responses:
+        '200':
+          description: Annotation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Delete annotation
+      operationId: deleteAnnotation
+      tags:
+      - Annotations
+      parameters:
+      - *id009
+      responses:
+        '204':
+          description: Annotation deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /providers:
+    get:
+      summary: List supported remote provider descriptors
+      operationId: listProviders
+      tags:
+      - Providers
+      responses:
+        '200':
+          description: Providers
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProviderDescriptor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /provider-connections:
+    get:
+      summary: List public provider connection status
+      operationId: listProviderConnections
+      tags:
+      - Providers
+      parameters:
+      - name: workspaceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Connections
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProviderConnection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    post:
+      summary: Create encrypted BYOK connection
+      operationId: createProviderConnection
+      tags:
+      - Providers
+      parameters:
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProviderConnectionRequest'
+      responses:
+        '201':
+          description: Connection status; secret is never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderConnection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /provider-connections/tests:
+    post:
+      summary: Test unsaved candidate credential
+      operationId: testCandidateProviderConnection
+      tags:
+      - Providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestCandidateConnectionRequest'
+      responses:
+        '200':
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderConnectionTest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /provider-connections/{connectionId}:
+    get:
+      summary: Read connection public status
+      operationId: getProviderConnection
+      tags:
+      - Providers
+      parameters:
+      - &id010
+        name: connectionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Connection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderConnection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    patch:
+      summary: Replace configuration or credential
+      operationId: updateProviderConnection
+      tags:
+      - Providers
+      parameters:
+      - *id010
+      - *id006
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProviderConnectionRequest'
+      responses:
+        '200':
+          description: Connection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderConnection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Revoke and delete provider connection
+      operationId: deleteProviderConnection
+      tags:
+      - Providers
+      parameters:
+      - *id010
+      responses:
+        '204':
+          description: Connection revoked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /provider-connections/{connectionId}/test:
+    post:
+      summary: Test saved provider connection
+      operationId: testProviderConnection
+      tags:
+      - Providers
+      parameters:
+      - *id010
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSavedConnectionRequest'
+      responses:
+        '200':
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderConnectionTest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /agents:
+    get:
+      summary: List available agents
+      operationId: listAgents
+      tags:
+      - Agents
+      parameters:
+      - name: workspaceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: operation
+        in: query
+        schema:
+          $ref: '#/components/schemas/AgentOperation'
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Agent page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    post:
+      summary: Create agent and immutable version 1
+      operationId: createAgent
+      tags:
+      - Agents
+      parameters:
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '201':
+          description: Agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /agents/{agentId}:
+    get:
+      summary: Read agent and current version
+      operationId: getAgent
+      tags:
+      - Agents
+      parameters:
+      - &id011
+        name: agentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    patch:
+      summary: Create new immutable agent version
+      operationId: updateAgent
+      tags:
+      - Agents
+      parameters:
+      - *id011
+      - *id006
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+      responses:
+        '200':
+          description: Agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Archive agent
+      operationId: archiveAgent
+      tags:
+      - Agents
+      parameters:
+      - *id011
+      responses:
+        '204':
+          description: Agent archived
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /runs:
+    post:
+      summary: Create remote AI run
+      operationId: createRun
+      tags:
+      - Runs
+      parameters:
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRunRequest'
+      responses:
+        '202':
+          description: Run accepted; connect to `eventsUrl` for replay/live SSE.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunAccepted'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security: *id001
+  /runs/{runId}:
+    get:
+      summary: Read run snapshot
+      operationId: getRun
+      tags:
+      - Runs
+      parameters:
+      - &id012
+        name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Request run cancellation
+      operationId: cancelRun
+      tags:
+      - Runs
+      parameters:
+      - *id012
+      responses:
+        '202':
+          description: Cancellation accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /runs/{runId}/events:
+    get:
+      summary: Replay and tail run events with SSE
+      operationId: streamRunEvents
+      tags:
+      - Runs
+      parameters:
+      - *id012
+      - name: Last-Event-ID
+        in: header
+        schema:
+          type: string
+          maxLength: 100
+      responses:
+        '200':
+          description: SSE stream. Each `data` field is one AgentRuntimeEvent JSON object.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-cache
+            X-Accel-Buffering:
+              schema:
+                type: string
+              example: 'no'
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                delta:
+                  value: 'id: evt_12
+
+                    event: run.delta
+
+                    data: {"schemaVersion":"1","eventId":"evt_12","runId":"00000000-0000-0000-0000-000000000000","sequence":12,"type":"run.delta","occurredAt":"2026-08-26T12:00:00Z","payload":{"text":"..."}}
+
+
+                    '
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Requested event is outside the replay retention window
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /threads:
+    post:
+      summary: Create document chat thread
+      operationId: createThread
+      tags:
+      - Chat
+      parameters:
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateThreadRequest'
+      responses:
+        '201':
+          description: Thread
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatThread'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /threads/{threadId}/messages:
+    get:
+      summary: List thread messages
+      operationId: listThreadMessages
+      tags:
+      - Chat
+      parameters:
+      - &id013
+        name: threadId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Message page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessagePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    post:
+      summary: Create user message and associated run
+      operationId: createThreadMessage
+      tags:
+      - Chat
+      parameters:
+      - *id013
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatMessageRequest'
+      responses:
+        '202':
+          description: Message persisted and run accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatRunAccepted'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /usage/summary:
+    get:
+      summary: Read token/cost usage summary
+      operationId: getUsageSummary
+      tags:
+      - Usage
+      parameters:
+      - name: workspaceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /budgets:
+    get:
+      summary: List budget policies
+      operationId: listBudgets
+      tags:
+      - Usage
+      parameters:
+      - name: workspaceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Budget policies
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BudgetPolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    post:
+      summary: Create budget policy
+      operationId: createBudget
+      tags:
+      - Usage
+      parameters:
+      - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertBudgetRequest'
+      responses:
+        '201':
+          description: Budget policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetPolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+  /budgets/{budgetId}:
+    put:
+      summary: Replace budget policy
+      operationId: updateBudget
+      tags:
+      - Usage
+      parameters:
+      - &id014
+        name: budgetId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - *id006
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertBudgetRequest'
+      responses:
+        '200':
+          description: Budget policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetPolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+    delete:
+      summary: Disable budget policy
+      operationId: deleteBudget
+      tags:
+      - Usage
+      parameters:
+      - *id014
+      responses:
+        '204':
+          description: Budget disabled
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security: *id001
+components:
+  securitySchemes:
+    webSession:
+      type: apiKey
+      in: cookie
+      name: paperbridge_session
+      description: HttpOnly cookie. Name is configurable; clients must not read it.
+    desktopBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-or-JWT
+      description: Held by Electron main process and injected through the local bridge.
+  responses:
+    BadRequest: &id015
+      description: RFC 9457 style problem details. `code` is the stable application identifier.
+      content: &id016
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Unauthorized: *id015
+    Forbidden: *id015
+    NotFound: *id015
+    Conflict: *id015
+    Unprocessable: *id015
+    RateLimited:
+      description: RFC 9457 style problem details. `code` is the stable application identifier.
+      content: *id016
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+    InternalError: *id015
+    ServiceUnavailable: *id015
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - status
+      - buildSha
+      - contractVersion
+      properties:
+        name:
+          const: PaperBridge API
+        status:
+          type: string
+          enum:
+          - ok
+          - degraded
+        buildSha:
+          type: string
+        contractVersion:
+          type: string
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+            enum:
+            - ok
+            - degraded
+            - unavailable
+    ProblemDetails:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - title
+      - status
+      - code
+      - requestId
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          maxLength: 500
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{2,99}$
+        requestId:
+          type: string
+          maxLength: 100
+        retryable:
+          type: boolean
+        errors:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - path
+            - code
+            properties:
+              path:
+                type: string
+              code:
+                type: string
+              message:
+                type: string
+        meta:
+          type: object
+          additionalProperties: true
+    AuthCredentials:
+      type: object
+      additionalProperties: false
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 10
+          maxLength: 128
+          writeOnly: true
+    ChangePasswordRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - password
+      properties:
+        password:
+          type: string
+          minLength: 10
+          maxLength: 128
+          writeOnly: true
+    Profile:
+      type: object
+      additionalProperties: false
+      required:
+      - userId
+      - displayName
+      - locale
+      - timezone
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+          maxLength: 120
+        locale:
+          type: string
+          maxLength: 20
+        timezone:
+          type: string
+          maxLength: 64
+    Session:
+      type: object
+      additionalProperties: false
+      required:
+      - authenticated
+      - authMethod
+      properties:
+        authenticated:
+          type: boolean
+        authMethod:
+          type: string
+          enum:
+          - anonymous
+          - web-cookie
+          - desktop-bearer
+        profile:
+          $ref: '#/components/schemas/Profile'
+        defaultWorkspaceId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+        deviceId:
+          type: string
+          format: uuid
+    Capabilities:
+      type: object
+      additionalProperties: false
+      required:
+      - runtime
+      - features
+      properties:
+        runtime:
+          type: string
+          enum:
+          - web
+          - desktop
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+        limits:
+          type: object
+          additionalProperties:
+            type:
+            - integer
+            - number
+            - string
+            - boolean
+    DesktopAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - codeChallenge
+      - codeChallengeMethod
+      - redirectUri
+      - state
+      - installation
+      properties:
+        codeChallenge:
+          type: string
+          minLength: 43
+          maxLength: 128
+        codeChallengeMethod:
+          const: S256
+        redirectUri:
+          type: string
+          pattern: ^http://127\.0\.0\.1:[0-9]{1,5}/callback$
+        state:
+          type: string
+          minLength: 16
+          maxLength: 200
+        installation:
+          type: object
+          additionalProperties: false
+          required:
+          - publicId
+          - platform
+          - architecture
+          - appVersion
+          properties:
+            publicId:
+              type: string
+              format: uuid
+            platform:
+              const: macos
+            architecture:
+              type: string
+              enum:
+              - arm64
+              - x64
+            appVersion:
+              type: string
+              maxLength: 40
+            devicePublicKey:
+              type: string
+              contentEncoding: base64
+    DesktopAuthorization:
+      type: object
+      additionalProperties: false
+      required:
+      - authorizationId
+      - loginUrl
+      - expiresAt
+      properties:
+        authorizationId:
+          type: string
+          format: uuid
+        loginUrl:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+    DesktopTokenRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - authorizationId
+      - code
+      - codeVerifier
+      properties:
+        authorizationId:
+          type: string
+          format: uuid
+        code:
+          type: string
+          minLength: 16
+          maxLength: 300
+        codeVerifier:
+          type: string
+          minLength: 43
+          maxLength: 128
+          writeOnly: true
+    DesktopTokenResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - accessToken
+      - refreshToken
+      - tokenType
+      - expiresIn
+      - deviceId
+      properties:
+        accessToken:
+          type: string
+          writeOnly: true
+        refreshToken:
+          type: string
+          writeOnly: true
+        tokenType:
+          const: Bearer
+        expiresIn:
+          type: integer
+          minimum: 60
+        deviceId:
+          type: string
+          format: uuid
+    DeviceSession:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - platform
+      - architecture
+      - appVersion
+      - createdAt
+      - lastSeenAt
+      - revoked
+      properties:
+        id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+        architecture:
+          type: string
+        appVersion:
+          type: string
+        channel:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        revoked:
+          type: boolean
+    WorkspaceRole:
+      type: string
+      enum:
+      - owner
+      - admin
+      - member
+      - viewer
+    Workspace:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - kind
+      - name
+      - role
+      - planCode
+      - version
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - personal
+          - lab
+        name:
+          type: string
+          maxLength: 160
+        slug:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/WorkspaceRole'
+        planCode:
+          type: string
+          maxLength: 64
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    WorkspacePage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    CreateWorkspaceRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - kind
+      - name
+      properties:
+        kind:
+          type: string
+          enum:
+          - lab
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        slug:
+          type: string
+          pattern: ^[a-z0-9][a-z0-9-]{2,99}$
+    UpdateWorkspaceRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        slug:
+          type:
+          - string
+          - 'null'
+          pattern: ^[a-z0-9][a-z0-9-]{2,99}$
+    WorkspaceMember:
+      type: object
+      additionalProperties: false
+      required:
+      - userId
+      - displayName
+      - role
+      - status
+      - version
+      - createdAt
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        role:
+          $ref: '#/components/schemas/WorkspaceRole'
+        status:
+          type: string
+          enum:
+          - invited
+          - active
+          - suspended
+          - removed
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        joinedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    WorkspaceMemberPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceMember'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    CreateInvitationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - email
+      - role
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - admin
+          - member
+          - viewer
+    WorkspaceInvitation:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - email
+      - role
+      - status
+      - expiresAt
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/WorkspaceRole'
+        status:
+          type: string
+          enum:
+          - pending
+          - accepted
+          - expired
+          - revoked
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    UpdateMemberRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        role:
+          type: string
+          enum:
+          - admin
+          - member
+          - viewer
+        status:
+          type: string
+          enum:
+          - active
+          - suspended
+    DocumentStatus:
+      type: string
+      enum:
+      - pending_upload
+      - queued
+      - extracting
+      - structuring
+      - indexing
+      - ready
+      - failed
+      - deleting
+      - deleted
+    Document:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspaceId
+      - title
+      - originalFilename
+      - mimeType
+      - byteSize
+      - status
+      - fileReady
+      - analysisReady
+      - version
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 500
+        originalFilename:
+          type: string
+          maxLength: 500
+        mimeType:
+          const: application/pdf
+        byteSize:
+          type: integer
+          minimum: 1
+          maximum: 52428800
+        pageCount:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        sourceSha256:
+          type:
+          - string
+          - 'null'
+          pattern: ^[a-f0-9]{64}$
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+        fileReady:
+          type: boolean
+        analysisReady:
+          type: boolean
+        failure:
+          oneOf:
+          - $ref: '#/components/schemas/DocumentFailure'
+          - type: 'null'
+        currentVersionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        currentParseVersion:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        highlightCount:
+          type: integer
+          minimum: 0
+          default: 0
+        lastOpenedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DocumentFailure:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      - retryable
+      - failedAt
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+        failedAt:
+          type: string
+          format: date-time
+    DocumentPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    CreateDocumentUploadRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - workspaceId
+      - originalFilename
+      - contentType
+      - byteSize
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        originalFilename:
+          type: string
+          minLength: 1
+          maxLength: 500
+        contentType:
+          const: application/pdf
+        byteSize:
+          type: integer
+          minimum: 1
+          maximum: 52428800
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+    DocumentUpload:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - documentId
+      - method
+      - uploadUrl
+      - requiredHeaders
+      - expiresAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        method:
+          type: string
+          enum:
+          - PUT
+          - POST
+        uploadUrl:
+          type: string
+          format: uri
+        requiredHeaders:
+          type: object
+          additionalProperties:
+            type: string
+        expiresAt:
+          type: string
+          format: date-time
+        maxBytes:
+          type: integer
+    CompleteDocumentUploadRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        etag:
+          type: string
+          maxLength: 300
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+    UpdateDocumentRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        lastOpenedAt:
+          type: string
+          format: date-time
+    FileAccess:
+      type: object
+      additionalProperties: false
+      required:
+      - url
+      - expiresAt
+      - contentType
+      - byteSize
+      properties:
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+        contentType:
+          const: application/pdf
+        byteSize:
+          type: integer
+        sha256:
+          type:
+          - string
+          - 'null'
+    CreateParseJobRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          enum:
+          - initial
+          - retry
+          - reparse
+          - parser_upgrade
+          default: retry
+        forceParserVersion:
+          type: string
+          maxLength: 80
+    ParseJob:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - documentId
+      - parseVersion
+      - status
+      - attempt
+      - queuedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        parseVersion:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - cancelled
+        attempt:
+          type: integer
+          minimum: 1
+        progressBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        errorCode:
+          type:
+          - string
+          - 'null'
+        queuedAt:
+          type: string
+          format: date-time
+        startedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        completedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    ObjectGraphAccess:
+      type: object
+      additionalProperties: false
+      required:
+      - schemaVersion
+      - parserVersion
+      - url
+      - expiresAt
+      - contentEncoding
+      properties:
+        schemaVersion:
+          type: string
+        parserVersion:
+          type: string
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+        contentEncoding:
+          type: string
+          enum:
+          - identity
+          - gzip
+          - zstd
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+    NormRect:
+      type: object
+      additionalProperties: false
+      required:
+      - x
+      - y
+      - width
+      - height
+      properties:
+        x:
+          type: number
+          minimum: 0
+          maximum: 1
+        y:
+          type: number
+          minimum: 0
+          maximum: 1
+        width:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+        height:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+    TextRange:
+      type: object
+      additionalProperties: false
+      required:
+      - startItemId
+      - startOffset
+      - endItemId
+      - endOffset
+      properties:
+        startItemId:
+          type: string
+          maxLength: 160
+        startOffset:
+          type: integer
+          minimum: 0
+        endItemId:
+          type: string
+          maxLength: 160
+        endOffset:
+          type: integer
+          minimum: 0
+    SelectionAnchor:
+      type: object
+      additionalProperties: false
+      required:
+      - documentId
+      - documentVersionId
+      - pageNumber
+      - rects
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        documentVersionId:
+          type: string
+          format: uuid
+        pageNumber:
+          type: integer
+          minimum: 1
+        rects:
+          type: array
+          minItems: 1
+          maxItems: 128
+          items:
+            $ref: '#/components/schemas/NormRect'
+        textRange:
+          $ref: '#/components/schemas/TextRange'
+        selectedText:
+          type: string
+          maxLength: 12000
+        blockIds:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            format: uuid
+    PdfBlock:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - type
+      - readingOrder
+      - bounds
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - heading
+          - paragraph
+          - caption
+          - list
+          - table
+          - figure
+          - equation
+          - reference
+          - header
+          - footer
+          - other
+        readingOrder:
+          type: integer
+          minimum: 0
+        text:
+          type:
+          - string
+          - 'null'
+        bounds:
+          $ref: '#/components/schemas/NormRect'
+        quads:
+          type: array
+          items:
+            $ref: '#/components/schemas/NormRect'
+        captionBlockId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        sectionPath:
+          type: array
+          items:
+            type: string
+    PdfPage:
+      type: object
+      additionalProperties: false
+      required:
+      - documentId
+      - parseVersion
+      - pageNumber
+      - width
+      - height
+      - rotation
+      - blocks
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        parseVersion:
+          type: integer
+        pageNumber:
+          type: integer
+        width:
+          type: number
+        height:
+          type: number
+        rotation:
+          type: integer
+          enum:
+          - 0
+          - 90
+          - 180
+          - 270
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PdfBlock'
+    AnnotationType:
+      type: string
+      enum:
+      - highlight
+      - note
+      - ai_answer
+      - bookmark
+    Annotation:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspaceId
+      - documentId
+      - createdBy
+      - type
+      - visibility
+      - anchor
+      - version
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/AnnotationType'
+        visibility:
+          type: string
+          enum:
+          - personal
+          - workspace
+        colorToken:
+          type:
+          - string
+          - 'null'
+          maxLength: 40
+        selectedText:
+          type:
+          - string
+          - 'null'
+          maxLength: 12000
+        bodyText:
+          type:
+          - string
+          - 'null'
+          maxLength: 50000
+        anchor:
+          $ref: '#/components/schemas/SelectionAnchor'
+        sourceRunId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        relocationState:
+          type: string
+          enum:
+          - exact
+          - relocated
+          - orphaned
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AnnotationPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Annotation'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    CreateAnnotationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - visibility
+      - anchor
+      properties:
+        type:
+          $ref: '#/components/schemas/AnnotationType'
+        visibility:
+          type: string
+          enum:
+          - personal
+          - workspace
+          default: personal
+        colorToken:
+          type: string
+          maxLength: 40
+        selectedText:
+          type: string
+          maxLength: 12000
+        bodyText:
+          type: string
+          maxLength: 50000
+        anchor:
+          $ref: '#/components/schemas/SelectionAnchor'
+        sourceRunId:
+          type: string
+          format: uuid
+    UpdateAnnotationRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        visibility:
+          type: string
+          enum:
+          - personal
+          - workspace
+        colorToken:
+          type:
+          - string
+          - 'null'
+          maxLength: 40
+        bodyText:
+          type:
+          - string
+          - 'null'
+          maxLength: 50000
+    ProviderDescriptor:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - displayName
+      - kind
+      - capabilities
+      properties:
+        code:
+          type: string
+        displayName:
+          type: string
+        kind:
+          type: string
+          enum:
+          - remote-api
+          - platform
+          - desktop-cli
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentOperation'
+        supportsByok:
+          type: boolean
+        modelsRefreshedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    ProviderConnection:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspaceId
+      - scope
+      - providerCode
+      - displayName
+      - status
+      - version
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum:
+          - personal
+          - workspace
+        ownerUserId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        providerCode:
+          type: string
+        displayName:
+          type: string
+        status:
+          type: string
+          enum:
+          - untested
+          - valid
+          - invalid
+          - revoked
+          - reconnect_required
+        publicConfig:
+          type: object
+          additionalProperties: true
+        lastTestedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        lastErrorCode:
+          type:
+          - string
+          - 'null'
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateProviderConnectionRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - workspaceId
+      - scope
+      - providerCode
+      - displayName
+      - credential
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum:
+          - personal
+          - workspace
+        providerCode:
+          type: string
+          maxLength: 80
+        displayName:
+          type: string
+          maxLength: 160
+        credential:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          writeOnly: true
+        config:
+          type: object
+          additionalProperties: true
+    UpdateProviderConnectionRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          maxLength: 160
+        credential:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          writeOnly: true
+        config:
+          type: object
+          additionalProperties: true
+    TestCandidateConnectionRequest:
+      allOf:
+      - $ref: '#/components/schemas/CreateProviderConnectionRequest'
+    TestSavedConnectionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        modelId:
+          type: string
+          maxLength: 200
+    ProviderConnectionTest:
+      type: object
+      additionalProperties: false
+      required:
+      - ok
+      - status
+      - testedAt
+      properties:
+        ok:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - valid
+          - invalid
+          - unavailable
+        code:
+          type:
+          - string
+          - 'null'
+        message:
+          type:
+          - string
+          - 'null'
+        testedAt:
+          type: string
+          format: date-time
+        latencyMs:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+    AgentOperation:
+      type: string
+      enum:
+      - explain-selection
+      - translate-selection
+      - translate-page
+      - summarize-document
+      - document-chat
+      - explain-figure
+      - explain-table
+      - explain-equation
+      - critique-methodology
+    AgentVersion:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - versionNumber
+      - systemPrompt
+      - operations
+      - retrievalPolicy
+      - modelPolicy
+      - budgetPolicy
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        versionNumber:
+          type: integer
+          minimum: 1
+        systemPrompt:
+          type: string
+          maxLength: 30000
+        operations:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/AgentOperation'
+        retrievalPolicy:
+          type: object
+          additionalProperties: true
+        outputPolicy:
+          type: object
+          additionalProperties: true
+        modelPolicy:
+          type: object
+          additionalProperties: true
+        budgetPolicy:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+    Agent:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspaceId
+      - name
+      - purpose
+      - visibility
+      - active
+      - currentVersion
+      - version
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 160
+        purpose:
+          type: string
+          maxLength: 500
+        visibility:
+          type: string
+          enum:
+          - personal
+          - workspace
+        templateCode:
+          type:
+          - string
+          - 'null'
+        active:
+          type: boolean
+        currentVersion:
+          $ref: '#/components/schemas/AgentVersion'
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AgentPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    CreateAgentRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - workspaceId
+      - name
+      - purpose
+      - visibility
+      - version
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        purpose:
+          type: string
+          minLength: 1
+          maxLength: 500
+        visibility:
+          type: string
+          enum:
+          - personal
+          - workspace
+        version:
+          $ref: '#/components/schemas/CreateAgentVersionRequest'
+    CreateAgentVersionRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - systemPrompt
+      - operations
+      properties:
+        systemPrompt:
+          type: string
+          minLength: 1
+          maxLength: 30000
+        operations:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AgentOperation'
+        retrievalPolicy:
+          type: object
+          additionalProperties: true
+        outputPolicy:
+          type: object
+          additionalProperties: true
+        modelPolicy:
+          type: object
+          additionalProperties: true
+        budgetPolicy:
+          type: object
+          additionalProperties: true
+    UpdateAgentRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        purpose:
+          type: string
+          minLength: 1
+          maxLength: 500
+        visibility:
+          type: string
+          enum:
+          - personal
+          - workspace
+        active:
+          type: boolean
+        version:
+          $ref: '#/components/schemas/CreateAgentVersionRequest'
+    RunStatus:
+      type: string
+      enum:
+      - queued
+      - running
+      - cancelling
+      - succeeded
+      - failed
+      - cancelled
+    CreateRunRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - workspaceId
+      - documentId
+      - operation
+      - scope
+      - executionPreference
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        agentId:
+          type: string
+          format: uuid
+        operation:
+          $ref: '#/components/schemas/AgentOperation'
+        scope:
+          type: string
+          enum:
+          - selection
+          - page
+          - section
+          - document
+        selection:
+          $ref: '#/components/schemas/SelectionAnchor'
+        pageNumber:
+          type: integer
+          minimum: 1
+        userPrompt:
+          type: string
+          maxLength: 12000
+        executionPreference:
+          type: string
+          enum:
+          - auto
+          - remote
+        providerConnectionId:
+          type: string
+          format: uuid
+        modelId:
+          type: string
+          maxLength: 200
+        maxCostMicrousd:
+          type: integer
+          minimum: 0
+        conversationId:
+          type: string
+          format: uuid
+        retryOfRunId:
+          type: string
+          format: uuid
+    AgentRun:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspaceId
+      - documentId
+      - status
+      - operation
+      - providerCode
+      - modelId
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        agentId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        agentVersionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        conversationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        status:
+          $ref: '#/components/schemas/RunStatus'
+        operation:
+          $ref: '#/components/schemas/AgentOperation'
+        providerCode:
+          type: string
+        modelId:
+          type: string
+        result:
+          oneOf:
+          - $ref: '#/components/schemas/RunResult'
+          - type: 'null'
+        error:
+          oneOf:
+          - $ref: '#/components/schemas/RunError'
+          - type: 'null'
+        usage:
+          oneOf:
+          - $ref: '#/components/schemas/RunUsage'
+          - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        completedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    RunAccepted:
+      type: object
+      additionalProperties: false
+      required:
+      - run
+      - eventsUrl
+      properties:
+        run:
+          $ref: '#/components/schemas/AgentRun'
+        eventsUrl:
+          type: string
+          format: uri-reference
+        reservedCostMicrousd:
+          type: integer
+          minimum: 0
+    RunResult:
+      type: object
+      additionalProperties: false
+      required:
+      - text
+      - evidenceStatus
+      - citations
+      properties:
+        text:
+          type: string
+        evidenceStatus:
+          type: string
+          enum:
+          - supported
+          - partially_supported
+          - unsupported_by_document
+          - not_required
+        citations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunCitation'
+        structured:
+          type:
+          - object
+          - 'null'
+          additionalProperties: true
+    RunCitation:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - documentId
+      - pageNumber
+      - sourceRole
+      properties:
+        id:
+          type: string
+        documentId:
+          type: string
+          format: uuid
+        blockId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        pageNumber:
+          type: integer
+          minimum: 1
+        sourceRole:
+          type: string
+          enum:
+          - selected
+          - adjacent
+          - retrieved
+          - caption
+          - citation
+        anchor:
+          $ref: '#/components/schemas/SelectionAnchor'
+        excerpt:
+          type:
+          - string
+          - 'null'
+          maxLength: 1000
+    RunError:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      - retryable
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+    RunUsage:
+      type: object
+      additionalProperties: false
+      required:
+      - inputTokens
+      - outputTokens
+      - costMicrousd
+      - currency
+      - estimated
+      properties:
+        inputTokens:
+          type: integer
+          minimum: 0
+        outputTokens:
+          type: integer
+          minimum: 0
+        costMicrousd:
+          type: integer
+          minimum: 0
+        currency:
+          const: USD
+        estimated:
+          type: boolean
+    AgentRuntimeEvent:
+      oneOf:
+      - $ref: '#/components/schemas/RunAcceptedEvent'
+      - $ref: '#/components/schemas/RunStartedEvent'
+      - $ref: '#/components/schemas/RunDeltaEvent'
+      - $ref: '#/components/schemas/RunCitationEvent'
+      - $ref: '#/components/schemas/RunWarningEvent'
+      - $ref: '#/components/schemas/RunResultEvent'
+      - $ref: '#/components/schemas/RunFailedEvent'
+      - $ref: '#/components/schemas/RunCancelledEvent'
+      - $ref: '#/components/schemas/RunCompletedEvent'
+      discriminator:
+        propertyName: type
+    RunEventBase:
+      type: object
+      additionalProperties: false
+      required:
+      - schemaVersion
+      - eventId
+      - runId
+      - sequence
+      - type
+      - occurredAt
+      - payload
+      properties:
+        schemaVersion:
+          const: '1'
+        eventId:
+          type: string
+          maxLength: 100
+        runId:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        type:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        providerCode:
+          type:
+          - string
+          - 'null'
+        modelId:
+          type:
+          - string
+          - 'null'
+        payload:
+          type: object
+    RunAcceptedEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.accepted
+          payload:
+            type: object
+            additionalProperties: false
+            properties:
+              reservedCostMicrousd:
+                type: integer
+                minimum: 0
+    RunStartedEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.started
+          payload:
+            type: object
+            additionalProperties: false
+            properties: {}
+    RunDeltaEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.delta
+          payload:
+            type: object
+            additionalProperties: false
+            required:
+            - text
+            properties:
+              text:
+                type: string
+                maxLength: 32000
+    RunCitationEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.citation
+          payload:
+            $ref: '#/components/schemas/RunCitation'
+    RunWarningEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.warning
+          payload:
+            type: object
+            additionalProperties: false
+            required:
+            - code
+            - message
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+    RunResultEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.result
+          payload:
+            $ref: '#/components/schemas/RunResult'
+    RunFailedEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.failed
+          payload:
+            $ref: '#/components/schemas/RunError'
+    RunCancelledEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.cancelled
+          payload:
+            type: object
+            additionalProperties: false
+            properties:
+              reason:
+                type: string
+    RunCompletedEvent:
+      allOf:
+      - $ref: '#/components/schemas/RunEventBase'
+      - type: object
+        properties:
+          type:
+            const: run.completed
+          payload:
+            type: object
+            additionalProperties: false
+            required:
+            - status
+            properties:
+              status:
+                type: string
+                enum:
+                - succeeded
+                - failed
+                - cancelled
+              usage:
+                $ref: '#/components/schemas/RunUsage'
+    ChatThread:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspaceId
+      - documentId
+      - title
+      - status
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 300
+        status:
+          type: string
+          enum:
+          - active
+          - archived
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateThreadRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - workspaceId
+      - documentId
+      - title
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+    ChatMessage:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - threadId
+      - role
+      - content
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        threadId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+          - user
+          - assistant
+          - system
+        content:
+          type: string
+        runId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    ChatMessagePage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    CreateChatMessageRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 12000
+        agentId:
+          type: string
+          format: uuid
+        providerConnectionId:
+          type: string
+          format: uuid
+        modelId:
+          type: string
+        maxCostMicrousd:
+          type: integer
+          minimum: 0
+    ChatRunAccepted:
+      type: object
+      additionalProperties: false
+      required:
+      - message
+      - run
+      - eventsUrl
+      properties:
+        message:
+          $ref: '#/components/schemas/ChatMessage'
+        run:
+          $ref: '#/components/schemas/AgentRun'
+        eventsUrl:
+          type: string
+          format: uri-reference
+    UsageSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - workspaceId
+      - from
+      - to
+      - total
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        total:
+          $ref: '#/components/schemas/RunUsage'
+        byProvider:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - providerCode
+            - usage
+            properties:
+              providerCode:
+                type: string
+              modelId:
+                type:
+                - string
+                - 'null'
+              usage:
+                $ref: '#/components/schemas/RunUsage'
+    BudgetPolicy:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspaceId
+      - period
+      - limitMicrousd
+      - warningPercent
+      - enforcement
+      - active
+      - version
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        userId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        providerCode:
+          type:
+          - string
+          - 'null'
+        modelId:
+          type:
+          - string
+          - 'null'
+        period:
+          type: string
+          enum:
+          - calendar_month
+          - rolling_30d
+        limitMicrousd:
+          type: integer
+          minimum: 0
+        warningPercent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        enforcement:
+          type: string
+          enum:
+          - warn
+          - hard_stop
+        active:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+    UpsertBudgetRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - workspaceId
+      - period
+      - limitMicrousd
+      - warningPercent
+      - enforcement
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        providerCode:
+          type: string
+        modelId:
+          type: string
+        period:
+          type: string
+          enum:
+          - calendar_month
+          - rolling_30d
+        limitMicrousd:
+          type: integer
+          minimum: 0
+        warningPercent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        enforcement:
+          type: string
+          enum:
+          - warn
+          - hard_stop
+        active:
+          type: boolean
+          default: true

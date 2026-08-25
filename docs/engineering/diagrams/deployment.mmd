@@ -1,0 +1,16 @@
+flowchart LR
+  WEB[Static Web / CDN] --> API[API service]
+  DESK[Signed macOS app] --> API
+  API --> AUTH[Supabase Auth]
+  API --> DB[(Postgres + RLS)]
+  API --> ST[(Private Storage)]
+  API --> Q[Durable queue]
+  Q --> W[Document/cleanup worker]
+  W --> DB
+  W --> ST
+  API --> PR[Remote AI providers]
+  OBS[Logs / Metrics / Traces] --- API
+  OBS --- W
+  REL[GitHub Actions release] --> WEB
+  REL --> API
+  REL --> DESK

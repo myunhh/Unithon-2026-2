@@ -1,0 +1,16 @@
+flowchart TB
+  subgraph APP[PaperBridge.app / paperbridge-frontend]
+    R[React renderer]
+    P[Typed preload]
+    M[Electron main]
+    L[127.0.0.1 random-port bridge]
+    C[Claude / Codex / Agy adapters]
+    K[safeStorage token]
+    U[Signed updater]
+  end
+  R -->|same-origin /v1| L
+  R -->|allowlisted IPC| P --> M
+  M --> L -->|main-owned bearer| API[PaperBridge backend]
+  M --> C
+  M --> K
+  M --> U

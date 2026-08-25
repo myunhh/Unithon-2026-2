@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "event_id": "33333333-3333-4333-8333-333333333333",
+  "run_id": "44444444-4444-4444-8444-444444444444",
+  "sequence": 12,
+  "type": "run.delta",
+  "occurred_at": "2026-08-25T12:00:00Z",
+  "provider_id": "openrouter",
+  "model_id": "openai/example",
+  "payload": {
+    "delta": "이 문장은..."
+  }
+}

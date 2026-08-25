@@ -1,0 +1,17 @@
+sequenceDiagram
+  participant F as Frontend
+  participant A as API
+  participant S as Storage
+  participant Q as Queue
+  participant W as Worker
+  F->>A: create upload
+  A-->>F: signed PUT
+  F->>S: PDF bytes
+  F->>A: complete + SHA-256
+  A->>S: verify object
+  A->>Q: parse job via outbox
+  A-->>F: document queued
+  F->>F: immediate Reader
+  Q->>W: parse
+  W->>S: object graph
+  W->>A: pages/blocks ready

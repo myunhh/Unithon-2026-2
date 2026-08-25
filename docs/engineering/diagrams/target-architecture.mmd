@@ -1,0 +1,29 @@
+flowchart LR
+  subgraph FE[paperbridge-frontend]
+    Web[React Web]
+    Desktop[Electron]
+    Bridge[Local bridge]
+    CLI[Local CLI adapters]
+    Client[Generated API client]
+  end
+  subgraph BE[paperbridge-backend]
+    API[API]
+    Queue[Queue]
+    Worker[Worker]
+    Providers[Remote provider adapters]
+  end
+  subgraph Supabase
+    Auth[Auth]
+    DB[(Postgres)]
+    Storage[(Private Storage)]
+  end
+  Web --> Client --> API
+  Desktop --> Bridge --> API
+  Desktop --> CLI
+  API --> Auth
+  API --> DB
+  API --> Storage
+  API --> Queue --> Worker
+  Worker --> DB
+  Worker --> Storage
+  API --> Providers

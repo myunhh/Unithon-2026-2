@@ -1,0 +1,89 @@
+﻿ID,Priority,Milestone,Title,Dependencies,Acceptance,Owner,Status
+FE-001,P0,F0 — 저장소 독립화,frontend 이력 보존 분리,-,"`src/electron/public` 이력 유지, backend source 없음",frontend,Todo
+FE-002,P0,F0 — 저장소 독립화,package/tsconfig/Vite/Vitest 재작성,FE-001,clean clone에서 install/typecheck/test/build,frontend,Todo
+FE-003,P0,F0 — 저장소 독립화,환경설정 schema와 build-time 검증,FE-002,누락·잘못된 URL은 startup/build 실패,frontend,Todo
+FE-004,P0,F0 — 저장소 독립화,OpenAPI client generation pipeline,C-001,"generated code 수동 수정 방지, exact contract version",frontend,Todo
+FE-005,P0,F0 — 저장소 독립화,MSW contract mock 서버,FE-004,주요 success/error/SSE fixture 제공,frontend,Todo
+FE-006,P0,F0 — 저장소 독립화,기존 `/api` 호출 inventory와 adapter,FE-004,직접 fetch 0건 또는 승인된 예외만,frontend,Todo
+FE-007,P0,F0 — 저장소 독립화,Electron의 backend import 제거,BE-012,backend clone 없이 desktop build,frontend,Todo
+FE-008,P0,F0 — 저장소 독립화,"root `AGENTS.md`, CODEOWNERS, PR template",FE-001,FE 소유 경계와 gate 명시,frontend,Todo
+FE-010,P0,F1 — App shell·인증·Workspace,route tree와 lazy boundary,FE-002,landing/auth/library/reader/settings/account 독립 chunk,frontend,Todo
+FE-011,P0,F1 — App shell·인증·Workspace,App/route/PDF error boundary,FE-010,retry·support request ID·safe fallback,frontend,Todo
+FE-012,P0,F1 — App shell·인증·Workspace,QueryClient 표준·query key factory,FE-004,server state 중복 저장 없음,frontend,Todo
+FE-013,P0,F1 — App shell·인증·Workspace,Problem Details mapper,FE-004,"stable `code` 기반 UX, provider raw error 미노출",frontend,Todo
+FE-014,P0,F1 — App shell·인증·Workspace,session bootstrap/logout/password UI,BE-020,loading/authenticated/anonymous 전 상태 테스트,frontend,Todo
+FE-015,P0,F1 — App shell·인증·Workspace,login/signup form validation,BE-020,keyboard/aria/error/retry 포함,frontend,Todo
+FE-016,P1,F1 — App shell·인증·Workspace,personal workspace selector foundation,BE-030,active workspace URL/cache 분리,frontend,Todo
+FE-017,P1,F1 — App shell·인증·Workspace,Lab member/invite UI,BE-034,role별 action visibility와 403 처리,frontend,Todo
+FE-018,P1,F1 — App shell·인증·Workspace,device session 조회/revoke UI,BE-025,"현재 device 구분, revoke 반영",frontend,Todo
+FE-020,P0,F2 — Library·업로드,Document list query/cursor pagination,BE-042,empty/loading/error/has-more 상태,frontend,Todo
+FE-021,P0,F2 — Library·업로드,upload session→signed upload→complete,BE-040,"progress, abort, retry, checksum",frontend,Todo
+FE-022,P0,F2 — Library·업로드,drag/drop/file picker validation,FE-021,PDF/size/zero-byte/client hint,frontend,Todo
+FE-023,P0,F2 — Library·업로드,upload 직후 Reader 진입,FE-021,parse 미완료에도 원본 표시,frontend,Todo
+FE-024,P0,F2 — Library·업로드,parse state 표시·capability gate,BE-044,queued/extracting/ready/failed/retry,frontend,Todo
+FE-025,P0,F2 — Library·업로드,rename/delete/undo navigation,BE-043,"ETag 충돌, soft delete UX",frontend,Todo
+FE-026,P1,F2 — Library·업로드,Library search/filter/sort,BE-046,"URL state, cursor reset, debounce",frontend,Todo
+FE-027,P1,F2 — Library·업로드,orphan/expired file error recovery,BE-047,재업로드·지원 경로,frontend,Todo
+FE-028,P2,F2 — Library·업로드,DOI/Zotero import UI placeholder,BE-140,feature flag·analytics event만,frontend,Todo
+FE-030,P0,F3 — PDF Reader 기반,Reader 상태 머신 분리,FE-010,file/parse/viewport/selection/run 상태 독립,frontend,Todo
+FE-031,P0,F3 — PDF Reader 기반,PDF.js worker lazy load,FE-030,initial route bundle에서 제외,frontend,Todo
+FE-032,P0,F3 — PDF Reader 기반,virtual page list,FE-031,"visible±1 render, 빠른 scroll 안정",frontend,Todo
+FE-033,P0,F3 — PDF Reader 기반,render task cancel/cleanup,FE-032,zoom/navigation 시 stale canvas 없음,frontend,Todo
+FE-034,P0,F3 — PDF Reader 기반,page/zoom/rotation/fit controls,FE-032,URL/restore policy와 keyboard,frontend,Todo
+FE-035,P0,F3 — PDF Reader 기반,selectable TextLayer parity,FE-032,canvas와 selection 좌표 허용 오차 충족,frontend,Todo
+FE-036,P0,F3 — PDF Reader 기반,Reader deep-link/last position restore,BE-043,document/page/zoom 복원,frontend,Todo
+FE-037,P1,F3 — PDF Reader 기반,server page/block overlay,BE-054,object graph version 불일치 fail-safe,frontend,Todo
+FE-038,P1,F3 — PDF Reader 기반,figure/table/equation selectable overlay,BE-056,object role unknown fallback,frontend,Todo
+FE-039,P1,F3 — PDF Reader 기반,300-page memory/perf guard,FE-032,지정 fixture에서 memory budget 통과,frontend,Todo
+FE-040,P2,F3 — PDF Reader 기반,OCR provenance overlay,BE-059,OCR/원본 text 구분 표시,frontend,Todo
+FE-050,P0,F4 — Selection·Annotation,canonical `SelectionAnchor` 생성,C-002,"0..1 top-left, multi-rect, schema validation",frontend,Todo
+FE-051,P0,F4 — Selection·Annotation,rect merge/sort/clip algorithm,FE-050,2단·줄바꿈 fixture unit test,frontend,Todo
+FE-052,P0,F4 — Selection·Annotation,selection toolbar placement,FE-050,"viewport collision, keyboard, Escape",frontend,Todo
+FE-053,P0,F4 — Selection·Annotation,selected text/context snapshot,FE-050,char limit·page 일치·공백 정규화,frontend,Todo
+FE-054,P0,F4 — Selection·Annotation,highlight create/list/delete,BE-060,"optimistic rollback, normalized overlay",frontend,Todo
+FE-055,P0,F4 — Selection·Annotation,annotation click→page/anchor,FE-054,virtualized Reader에서 정확히 이동,frontend,Todo
+FE-056,P1,F4 — Selection·Annotation,note editor/autosave,BE-061,"debounce, conflict recovery, 20k limit",frontend,Todo
+FE-057,P1,F4 — Selection·Annotation,AI result pin annotation,FE-070,source run/citation 연결,frontend,Todo
+FE-058,P1,F4 — Selection·Annotation,version mismatch orphan UI,BE-062,원본 snapshot 표시·relocate 상태,frontend,Todo
+FE-059,P2,F4 — Selection·Annotation,annotation filter/export,BE-063,type/author filter와 portable export,frontend,Todo
+FE-070,P0,F5 — AI 실행·Provider,run create client/state machine,BE-080,accepted/running/terminal 단일 전이,frontend,Todo
+FE-071,P0,F5 — AI 실행·Provider,SSE parser/reconnect/replay,C-003,"`Last-Event-ID`, duplicate drop, unknown ignore",frontend,Todo
+FE-072,P0,F5 — AI 실행·Provider,delta batching과 accessible live output,FE-071,렌더 폭주·스크린리더 폭주 방지,frontend,Todo
+FE-073,P0,F5 — AI 실행·Provider,cancel/retry UX,BE-083,"race/late terminal 안전, retry 새 run",frontend,Todo
+FE-074,P0,F5 — AI 실행·Provider,explain-selection action,"FE-050,BE-080",원문 위치와 streamed 답변 동시 표시,frontend,Todo
+FE-075,P0,F5 — AI 실행·Provider,translate-selection action,"FE-050,BE-080",원문/번역 비교·source anchor,frontend,Todo
+FE-076,P0,F5 — AI 실행·Provider,citation/evidence renderer,BE-085,"click 이동, missing evidence warning",frontend,Todo
+FE-077,P0,F5 — AI 실행·Provider,provider connection status/settings,BE-070,"secret 재표시 없음, test/delete",frontend,Todo
+FE-078,P0,F5 — AI 실행·Provider,cost estimate/budget unavailable UX,BE-086,"실행 전 예상/잔여, hard block",frontend,Todo
+FE-079,P1,F5 — AI 실행·Provider,agent picker/default helpers,BE-075,operation capability filter,frontend,Todo
+FE-080,P1,F5 — AI 실행·Provider,custom agent CRUD/version history,BE-076,"validation, clone, immutable version 표시",frontend,Todo
+FE-081,P1,F5 — AI 실행·Provider,summary action/result,BE-100,"parse readiness, citation 3줄/section",frontend,Todo
+FE-082,P1,F5 — AI 실행·Provider,document Chat panel,BE-101,"thread history, citation, stop/retry",frontend,Todo
+FE-083,P1,F5 — AI 실행·Provider,figure/table/equation actions,"FE-038,BE-102",object+caption context 표시,frontend,Todo
+FE-084,P1,F5 — AI 실행·Provider,usage/budget dashboard,BE-087,period/provider/model/estimated 구분,frontend,Todo
+FE-085,P2,F5 — AI 실행·Provider,model compare/quality-speed-cost UI,BE-072,capability/price freshness 표시,frontend,Todo
+FE-100,P0,F6 — Desktop·macOS,typed preload API와 IPC allowlist,FE-007,generic IPC/file/shell API 없음,frontend,Todo
+FE-101,P0,F6 — Desktop·macOS,loopback bridge random port/nonce,"FE-100,BE-012","127.0.0.1 only, path/method allowlist",frontend,Todo
+FE-102,P0,F6 — Desktop·macOS,desktop PKCE login broker,BE-026,"system browser, one-time code, token renderer 미노출",frontend,Todo
+FE-103,P0,F6 — Desktop·macOS,safeStorage token lifecycle,FE-102,logout/revoke/rotation/error recovery,frontend,Todo
+FE-104,P0,F6 — Desktop·macOS,local CLI health display,FE-100,path/credential 미노출,frontend,Todo
+FE-105,P0,F6 — Desktop·macOS,local run event normalization,C-003,Claude/Codex/Agy가 동일 UI state,frontend,Todo
+FE-106,P0,F6 — Desktop·macOS,process tree cancel/timeout/output cap,FE-105,orphan process 없음,frontend,Todo
+FE-107,P0,F6 — Desktop·macOS,external URL policy·window hardening,FE-100,HTTPS allowlist와 navigation 차단,frontend,Todo
+FE-108,P1,F6 — Desktop·macOS,Forge package config,FE-007,arm64/x64 QA artifact 생성,frontend,Todo
+FE-109,P1,F6 — Desktop·macOS,Developer ID sign/hardened runtime,FE-108,`codesign --verify --deep --strict`,frontend,Todo
+FE-110,P1,F6 — Desktop·macOS,notarization/staple,FE-109,Gatekeeper offline check 통과,frontend,Todo
+FE-111,P1,F6 — Desktop·macOS,DMG+ZIP maker,FE-110,clean Mac install/launch/uninstall,frontend,Todo
+FE-112,P1,F6 — Desktop·macOS,auto-update stable/beta channel,FE-111,"signature 검증, rollback runbook",frontend,Todo
+FE-113,P1,F6 — Desktop·macOS,desktop crash/update diagnostics,FE-112,"개인정보 redaction, opt-in/notice",frontend,Todo
+FE-114,P2,F6 — Desktop·macOS,Universal binary 여부 재평가,FE-111,artifact size·CI 시간 근거 ADR,frontend,Todo
+FE-120,P0,F7 — 품질,unit/component test baseline,FE-002,critical feature line/branch 목표 설정,frontend,Todo
+FE-121,P0,F7 — 품질,Web Playwright smoke,"FE-023,FE-075",login→upload→selection→run→highlight,frontend,Todo
+FE-122,P0,F7 — 품질,Electron Playwright smoke,"FE-101,FE-105",launch/login bridge/local health,frontend,Todo
+FE-123,P0,F7 — 품질,accessibility audit,FE-030,"keyboard, focus, contrast, aria-live",frontend,Todo
+FE-124,P0,F7 — 품질,error/empty/loading visual matrix,FE-013,주요 route snapshot/story,frontend,Todo
+FE-125,P1,F7 — 품질,locale/message-key 기반 i18n,FE-013,"ko/en fallback, raw server detail 의존 없음",frontend,Todo
+FE-126,P1,F7 — 품질,privacy-safe analytics,BE-120,selection/PDF/prompt body 수집 없음,frontend,Todo
+FE-127,P1,F7 — 품질,bundle/performance budget CI,FE-031,route/PDF/desktop chunk threshold,frontend,Todo
+FE-128,P1,F7 — 품질,dependency/license/SBOM check,FE-002,high severity gate·license allowlist,frontend,Todo
+FE-129,P1,F7 — 품질,release smoke matrix,FE-111,지원 macOS/CPU/권한/업데이트 표,frontend,Todo

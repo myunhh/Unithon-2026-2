@@ -1,0 +1,12 @@
+erDiagram
+  WORKSPACES ||--o{ WORKSPACE_MEMBERS : contains
+  WORKSPACES ||--o{ DOCUMENTS : owns
+  DOCUMENTS ||--o{ DOCUMENT_VERSIONS : versions
+  DOCUMENT_VERSIONS ||--o{ DOCUMENT_PAGES : pages
+  DOCUMENT_PAGES ||--o{ DOCUMENT_BLOCKS : blocks
+  DOCUMENTS ||--o{ ANNOTATIONS : has
+  AGENTS ||--o{ AGENT_VERSIONS : versions
+  DOCUMENTS ||--o{ AGENT_RUNS : context
+  AGENT_RUNS ||--o{ AGENT_RUN_EVENTS : emits
+  AGENT_RUNS ||--o{ RUN_CITATIONS : cites
+  AGENT_RUNS ||--o{ USAGE_LEDGER : settles

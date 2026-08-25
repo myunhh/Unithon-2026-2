@@ -1,0 +1,10 @@
+{
+  "type": "https://api.paperbridge.example/problems/budget-exceeded",
+  "title": "Budget exceeded",
+  "status": 429,
+  "detail": "이 workspace의 월 AI 예산을 초과했습니다.",
+  "code": "budget_exceeded",
+  "request_id": "req_example",
+  "retryable": false,
+  "field_errors": []
+}

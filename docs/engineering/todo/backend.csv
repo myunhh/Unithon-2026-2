@@ -1,0 +1,92 @@
+﻿ID,Priority,Milestone,Title,Dependencies,Acceptance,Owner,Status
+BE-001,P0,B0 — 저장소·계약 기반,backend 이력 보존 분리,-,"`server/**` 이력 유지, UI/Electron 없음",backend,Todo
+BE-002,P0,B0 — 저장소·계약 기반,workspace/package 구조 생성,BE-001,"`apps/api`, `apps/worker`, packages 독립 build",backend,Todo
+BE-003,P0,B0 — 저장소·계약 기반,strict config schema,BE-002,"startup fail-fast, secret log 없음",backend,Todo
+BE-004,P0,B0 — 저장소·계약 기반,HTTP framework/module skeleton,BE-002,route/service/repository/policy 경계,backend,Todo
+BE-005,P0,B0 — 저장소·계약 기반,OpenAPI 3.1 원본·lint,BE-004,모든 public route operationId/schema/example,backend,Todo
+BE-006,P0,B0 — 저장소·계약 기반,contract client/package publish,BE-005,"exact semver artifact, provenance",backend,Todo
+BE-007,P0,B0 — 저장소·계약 기반,problem+json/error registry,BE-004,stable code·request ID·redaction,backend,Todo
+BE-008,P0,B0 — 저장소·계약 기반,request ID/log/metrics baseline,BE-004,모든 request/run/job correlation,backend,Todo
+BE-009,P0,B0 — 저장소·계약 기반,`/api` compatibility adapter,BE-005,기존 FE 전환 기간 regression test,backend,Todo
+BE-010,P0,B0 — 저장소·계약 기반,CI branch/contract/migration gates,BE-002,clean clone full gate,backend,Todo
+BE-011,P0,B0 — 저장소·계약 기반,root AGENTS/CODEOWNERS/PR template,BE-001,backend ownership/contract rule,backend,Todo
+BE-012,P0,B0 — 저장소·계약 기반,remote API와 Electron import 계약 제거,BE-004,backend는 packaged desktop 내부 import 안 됨,backend,Todo
+BE-020,P0,B1 — 인증·Workspace·데이터 모델,Supabase auth session endpoints,BE-004,signup/login/logout/session/password tests,backend,Todo
+BE-021,P0,B1 — 인증·Workspace·데이터 모델,web cookie flags/rotation/CSRF,BE-020,Secure/HttpOnly/SameSite/Origin 정책,backend,Todo
+BE-022,P0,B1 — 인증·Workspace·데이터 모델,request auth context,BE-020,user/session/device/method 추출,backend,Todo
+BE-023,P0,B1 — 인증·Workspace·데이터 모델,authorization policy module,BE-022,route 직접 role 비교 금지,backend,Todo
+BE-024,P0,B1 — 인증·Workspace·데이터 모델,auth rate limit/lockout telemetry,BE-020,분산 limiter와 enumeration 방지,backend,Todo
+BE-025,P1,B1 — 인증·Workspace·데이터 모델,device sessions/revoke,BE-022,device별 refresh revoke/audit,backend,Todo
+BE-026,P0,B1 — 인증·Workspace·데이터 모델,desktop PKCE authorization endpoints,BE-022,"S256, state, one-time code, expiry",backend,Todo
+BE-030,P0,B1 — 인증·Workspace·데이터 모델,profiles/workspaces/members migration,BE-002,가입 시 personal workspace,backend,Todo
+BE-031,P0,B1 — 인증·Workspace·데이터 모델,workspace RLS helper/policies,BE-030,cross-user negative test,backend,Todo
+BE-032,P0,B1 — 인증·Workspace·데이터 모델,workspace CRUD,"BE-023,BE-030","ETag, owner invariant",backend,Todo
+BE-033,P1,B1 — 인증·Workspace·데이터 모델,invitations accept/expire/revoke,BE-032,token hash·role·expiry·audit,backend,Todo
+BE-034,P1,B1 — 인증·Workspace·데이터 모델,member role update/remove,BE-032,마지막 owner 보호,backend,Todo
+BE-035,P1,B1 — 인증·Workspace·데이터 모델,account export/delete orchestration,BE-030,job status·retention·provider secret 삭제,backend,Todo
+BE-040,P0,B2 — Document·Storage,upload session/signed target,BE-030,MIME/size/checksum/expiry/idempotency,backend,Todo
+BE-041,P0,B2 — Document·Storage,upload complete transaction,BE-040,storage verify→version→job→outbox atomic,backend,Todo
+BE-042,P0,B2 — Document·Storage,document list/get/cursor,BE-041,workspace policy·stable cursor,backend,Todo
+BE-043,P0,B2 — Document·Storage,rename/soft delete/file-access,BE-042,"ETag, short signed URL, no-store",backend,Todo
+BE-044,P0,B2 — Document·Storage,document parse state/capabilities,BE-041,Reader-ready와 analysis-ready 분리,backend,Todo
+BE-045,P0,B2 — Document·Storage,legacy multipart compatibility,BE-040,"deprecation header, parity test",backend,Todo
+BE-046,P1,B2 — Document·Storage,metadata search/filter,BE-042,indexed title/author/date,backend,Todo
+BE-047,P0,B2 — Document·Storage,orphan Storage reconciliation,BE-041,expired upload/object/DB mismatch cleanup,backend,Todo
+BE-048,P1,B2 — Document·Storage,document version replacement,BE-043,annotation orphan policy·current version CAS,backend,Todo
+BE-049,P2,B2 — Document·Storage,DOI/import source model,BE-042,source provenance·dedupe checksum,backend,Todo
+BE-050,P0,B3 — Parsing·Object Graph,durable queue/outbox publisher,BE-041,"transaction outbox, lease, retry, DLQ",backend,Todo
+BE-051,P0,B3 — Parsing·Object Graph,parse worker sandbox/resource limit,BE-050,"temp cleanup, timeout, memory/page limits",backend,Todo
+BE-052,P0,B3 — Parsing·Object Graph,PDF validation/error taxonomy,BE-051,password/corrupt/too-large 구분,backend,Todo
+BE-053,P0,B3 — Parsing·Object Graph,page geometry/text extraction,BE-051,rotation/transform/version metadata,backend,Todo
+BE-054,P0,B3 — Parsing·Object Graph,line/block/reading-order structure,BE-053,1단/2단 fixture tolerance,backend,Todo
+BE-055,P0,B3 — Parsing·Object Graph,object graph artifact writer,BE-054,"versioned schema, deterministic IDs",backend,Todo
+BE-056,P1,B3 — Parsing·Object Graph,figure/table/equation/caption relation,BE-054,object role + reference block,backend,Todo
+BE-057,P0,B3 — Parsing·Object Graph,pages/blocks projection + full text index,BE-055,bulk transaction/idempotent upsert,backend,Todo
+BE-058,P0,B3 — Parsing·Object Graph,parse retry/status/admin recovery,BE-050,"retryable 분류, attempt/heartbeat",backend,Todo
+BE-059,P2,B3 — Parsing·Object Graph,textless detection/OCR lane,BE-053,provenance·plan gate·normalized coords,backend,Todo
+BE-060,P0,B3 — Parsing·Object Graph,annotation CRUD/anchor validation,BE-054,document/version/page/schema/RLS,backend,Todo
+BE-061,P1,B3 — Parsing·Object Graph,note conflict/autosave support,BE-060,"ETag/version, size limit",backend,Todo
+BE-062,P1,B3 — Parsing·Object Graph,annotation orphan/relocation fields,"BE-048,BE-060",source snapshot·state transition,backend,Todo
+BE-063,P2,B3 — Parsing·Object Graph,annotation export,BE-060,portable JSON/Markdown with provenance,backend,Todo
+BE-070,P0,B4 — Provider·Agent·Run,provider registry/capability model,BE-005,remote provider-neutral descriptor,backend,Todo
+BE-071,P0,B4 — Provider·Agent·Run,BYOK envelope encryption/key version,BE-070,"ciphertext만 저장, rotation test",backend,Todo
+BE-072,P1,B4 — Provider·Agent·Run,model catalog/pricing freshness,BE-070,"capability, source, fetched_at, stale flag",backend,Todo
+BE-073,P0,B4 — Provider·Agent·Run,connection test/error normalization,BE-071,secret/raw body log 없음,backend,Todo
+BE-074,P0,B4 — Provider·Agent·Run,provider timeout/concurrency/circuit breaker,BE-070,retry classification와 metrics,backend,Todo
+BE-075,P1,B4 — Provider·Agent·Run,default agents seed,BE-030,설명/번역/수식/방법론/비판 리뷰,backend,Todo
+BE-076,P1,B4 — Provider·Agent·Run,agent CRUD + immutable versions,BE-075,clone/visibility/capability/prompt validation,backend,Todo
+BE-077,P1,B4 — Provider·Agent·Run,agent publish/archive policy,BE-076,workspace scope와 audit,backend,Todo
+BE-080,P0,B4 — Provider·Agent·Run,run create/authorization/context assembly,"BE-054,BE-070","idempotency, operation capability",backend,Todo
+BE-081,P0,B4 — Provider·Agent·Run,event log + SSE replay/live tail,BE-080,"monotonic sequence, heartbeat, Last-Event-ID",backend,Todo
+BE-082,P0,B4 — Provider·Agent·Run,remote execution adapter,"BE-073,BE-081",malformed SSE/JSONL normalization,backend,Todo
+BE-083,P0,B4 — Provider·Agent·Run,cancel/timeout/terminal CAS,BE-082,"terminal 정확히 하나, late event drop",backend,Todo
+BE-084,P0,B4 — Provider·Agent·Run,prompt assembly/injection boundary,BE-080,"trusted/untrusted 분리, limits",backend,Todo
+BE-085,P0,B4 — Provider·Agent·Run,citation allowlist/result validation,"BE-054,BE-082","context 밖 citation 제거, unsupported 상태",backend,Todo
+BE-086,P0,B4 — Provider·Agent·Run,budget reservation/settlement,"BE-072,BE-080","concurrent overspend 0, microusd ledger",backend,Todo
+BE-087,P0,B4 — Provider·Agent·Run,usage summary/reconciliation,BE-086,actual/estimated/price snapshot 구분,backend,Todo
+BE-088,P1,B4 — Provider·Agent·Run,run retention/replay compaction,BE-081,"final projection 보존, event TTL",backend,Todo
+BE-100,P1,B5 — Retrieval·Chat·비즈니스 기능,evidence-based document summary,"BE-057,BE-085",problem/method/result + citation,backend,Todo
+BE-101,P1,B5 — Retrieval·Chat·비즈니스 기능,thread/message/document chat,"BE-057,BE-080","user message+run atomic, pagination",backend,Todo
+BE-102,P1,B5 — Retrieval·Chat·비즈니스 기능,object explanation retrieval,"BE-056,BE-085",caption+reference paragraph context,backend,Todo
+BE-103,P1,B5 — Retrieval·Chat·비즈니스 기능,hybrid retrieval/top-k/diversity,BE-057,"FTS baseline, optional pgvector",backend,Todo
+BE-104,P1,B5 — Retrieval·Chat·비즈니스 기능,retrieval/result cache,BE-103,"version/agent/model key, privacy TTL",backend,Todo
+BE-105,P2,B5 — Retrieval·Chat·비즈니스 기능,page/section translation job,"BE-057,BE-081",block order·progress·partial resume,backend,Todo
+BE-110,P1,B5 — Retrieval·Chat·비즈니스 기능,budget policy CRUD,BE-086,user/workspace/provider/model hierarchy,backend,Todo
+BE-111,P1,B5 — Retrieval·Chat·비즈니스 기능,plan entitlement/capability service,BE-030,"server authority, feature flag와 분리",backend,Todo
+BE-112,P1,B5 — Retrieval·Chat·비즈니스 기능,subscription/billing webhook skeleton,BE-111,signature/idempotency/audit,backend,Todo
+BE-113,P2,B5 — Retrieval·Chat·비즈니스 기능,Lab seat/organization usage,"BE-034,BE-087",member attribution·seat state,backend,Todo
+BE-120,P0,B6 — 운영·보안·배포,structured log redaction,BE-008,secret/PDF/prompt/output/path 차단 test,backend,Todo
+BE-121,P0,B6 — 운영·보안·배포,metrics/tracing/SLO dashboard,BE-008,API/run/parse/storage/provider 지표,backend,Todo
+BE-122,P0,B6 — 운영·보안·배포,shared rate limiter,BE-004,route/user/workspace/provider limits,backend,Todo
+BE-123,P0,B6 — 운영·보안·배포,security headers/CORS/body limits,BE-004,exact origin·no wildcard credentials,backend,Todo
+BE-124,P0,B6 — 운영·보안·배포,audit log taxonomy,BE-030,provider/member/budget/delete/device event,backend,Todo
+BE-125,P0,B6 — 운영·보안·배포,backup/restore rehearsal,BE-030,RPO/RTO evidence와 private Storage 포함,backend,Todo
+BE-126,P0,B6 — 운영·보안·배포,migration expand/contract pipeline,BE-030,staging rehearsal·lock timeout·rollback,backend,Todo
+BE-127,P0,B6 — 운영·보안·배포,API/worker container images,BE-002,"non-root, healthcheck, SBOM",backend,Todo
+BE-128,P0,B6 — 운영·보안·배포,staging deployment/smoke,BE-127,Supabase/storage/provider fake E2E,backend,Todo
+BE-129,P1,B6 — 운영·보안·배포,production canary/rollback,BE-128,contract compatibility와 migration gate,backend,Todo
+BE-130,P1,B6 — 운영·보안·배포,dependency/secret/container scanning,BE-010,high severity policy·exceptions expiry,backend,Todo
+BE-131,P1,B6 — 운영·보안·배포,incident runbooks,BE-121,"provider outage, queue backlog, key leak, RLS",backend,Todo
+BE-132,P1,B6 — 운영·보안·배포,data retention/cleanup jobs,"BE-035,BE-088",soft delete/event/upload/audit TTL,backend,Todo
+BE-133,P1,B6 — 운영·보안·배포,load/cost test,"BE-087,BE-121",concurrent run/upload/SSE envelope,backend,Todo
+BE-140,P2,B6 — 운영·보안·배포,Zotero/DOI connector,BE-049,SSRF-safe fetch/provenance/rate limit,backend,Todo

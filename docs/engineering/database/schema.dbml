@@ -1,0 +1,430 @@
+Project PaperBridge {
+  database_type: 'PostgreSQL'
+  Note: 'Normalized target model. SQL migrations remain authoritative.'
+}
+
+Enum workspace_kind { personal lab }
+Enum workspace_role { owner admin member viewer }
+Enum membership_status { invited active suspended removed }
+Enum document_status { uploading uploaded queued parsing ready failed deleting deleted }
+Enum job_status { queued running succeeded failed cancelled dead_letter }
+Enum block_kind { paragraph heading figure table equation caption reference header footer list other }
+Enum annotation_kind { highlight note bookmark ai_answer }
+Enum provider_scope { personal workspace }
+Enum run_status { queued running cancelling succeeded failed cancelled }
+Enum grounding_status { pending grounded partial unsupported_by_document not_required }
+Enum thread_status { active archived deleted }
+Enum message_role { user assistant system tool }
+Enum ledger_entry_kind { reservation debit release credit adjustment }
+
+Table auth.users {
+  id uuid [pk]
+  email varchar
+  created_at timestamptz
+  Note: 'Managed by Supabase Auth.'
+}
+
+Table profiles {
+  user_id uuid [pk, ref: > auth.users.id]
+  display_name varchar(120)
+  locale varchar(20) [not null, default: 'ko-KR']
+  timezone varchar(64) [not null, default: 'Asia/Seoul']
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table workspaces {
+  id uuid [pk]
+  kind workspace_kind [not null]
+  owner_user_id uuid [not null, ref: > auth.users.id]
+  name varchar(160) [not null]
+  slug varchar(100)
+  plan_code varchar(64) [not null, default: 'free']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  deleted_at timestamptz
+}
+
+Table workspace_members {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  user_id uuid [not null, ref: > auth.users.id]
+  role workspace_role [not null]
+  status membership_status [not null]
+  invited_by uuid [ref: > auth.users.id]
+  joined_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  Indexes { (workspace_id, user_id) [unique] }
+}
+
+Table workspace_invitations {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  email varchar(320) [not null]
+  role workspace_role [not null]
+  status varchar(20) [not null]
+  token_hash bytea [not null]
+  invited_by uuid [not null, ref: > auth.users.id]
+  accepted_by uuid [ref: > auth.users.id]
+  expires_at timestamptz [not null]
+  created_at timestamptz [not null]
+}
+
+Table document_uploads {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  created_by uuid [not null, ref: > auth.users.id]
+  original_filename varchar(500) [not null]
+  content_type varchar(100) [not null]
+  declared_byte_size bigint [not null]
+  declared_sha256 char(64) [not null]
+  bucket varchar(160) [not null]
+  object_key varchar(1000) [not null]
+  expires_at timestamptz [not null]
+  completed_at timestamptz
+  created_document_id uuid [ref: > documents.id]
+}
+
+Table documents {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  created_by uuid [not null, ref: > auth.users.id]
+  title varchar(500) [not null]
+  original_filename varchar(500) [not null]
+  mime_type varchar(100) [not null]
+  status document_status [not null]
+  current_version_id uuid [ref: > document_versions.id]
+  current_parse_version int
+  page_count int
+  failure_code varchar(100)
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  deleted_at timestamptz
+}
+
+Table document_versions {
+  id uuid [pk]
+  document_id uuid [not null, ref: > documents.id]
+  version_number int [not null]
+  created_by uuid [not null, ref: > auth.users.id]
+  source_file_id uuid [ref: > document_files.id]
+  byte_size bigint [not null]
+  source_sha256 char(64) [not null]
+  parser_version varchar(80)
+  object_graph_schema_version varchar(80)
+  created_at timestamptz [not null]
+  Indexes { (document_id, version_number) [unique] }
+}
+
+Table document_files {
+  id uuid [pk]
+  document_version_id uuid [not null, ref: > document_versions.id]
+  kind varchar(30) [not null]
+  storage_provider varchar(40) [not null]
+  bucket varchar(160) [not null]
+  object_key varchar(1000) [not null]
+  content_type varchar(100) [not null]
+  byte_size bigint [not null]
+  sha256 char(64)
+  created_at timestamptz [not null]
+  deleted_at timestamptz
+  Indexes { (storage_provider, bucket, object_key) [unique] }
+}
+
+Table document_parse_jobs {
+  id uuid [pk]
+  document_version_id uuid [not null, ref: > document_versions.id]
+  parse_version int [not null]
+  attempt int [not null]
+  status job_status [not null]
+  parser_version varchar(80) [not null]
+  coordinate_version varchar(40) [not null]
+  progress_bps int [not null]
+  lease_owner varchar(200)
+  lease_expires_at timestamptz
+  heartbeat_at timestamptz
+  error_code varchar(100)
+  error_detail jsonb
+  queued_at timestamptz [not null]
+  started_at timestamptz
+  completed_at timestamptz
+  Indexes { (document_version_id, parse_version, attempt) [unique] }
+}
+
+Table document_pages {
+  id uuid [pk]
+  document_version_id uuid [not null, ref: > document_versions.id]
+  parse_version int [not null]
+  page_number int [not null]
+  width numeric [not null]
+  height numeric [not null]
+  rotation int [not null]
+  text_checksum char(64)
+  textless boolean [not null]
+  Indexes { (document_version_id, parse_version, page_number) [unique] }
+}
+
+Table document_blocks {
+  id uuid [pk]
+  document_page_id uuid [not null, ref: > document_pages.id]
+  kind block_kind [not null]
+  reading_order int [not null]
+  section_path text[]
+  text_content text
+  text_hash char(64)
+  bbox_json jsonb [not null]
+  quads_json jsonb [not null]
+  caption_block_id uuid [ref: > document_blocks.id]
+  metadata_json jsonb
+  Indexes { (document_page_id, reading_order) [unique] }
+}
+
+Table document_block_embeddings {
+  block_id uuid [pk, ref: > document_blocks.id]
+  embedding_model varchar(160) [not null]
+  embedding_version varchar(80) [not null]
+  embedding vector [not null]
+  source_text_hash char(64) [not null]
+}
+
+Table annotations {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  document_id uuid [not null, ref: > documents.id]
+  document_version_id uuid [not null, ref: > document_versions.id]
+  created_by uuid [not null, ref: > auth.users.id]
+  kind annotation_kind [not null]
+  color varchar(32)
+  selected_text text
+  body_text text
+  source_run_id uuid [ref: > agent_runs.id]
+  page_number int [not null]
+  anchor_json jsonb [not null]
+  relocation_status varchar(20) [not null]
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  deleted_at timestamptz
+}
+
+Table providers {
+  code varchar(80) [pk]
+  display_name varchar(160) [not null]
+  connection_kind varchar(40) [not null]
+  capability_json jsonb [not null]
+  active boolean [not null]
+}
+
+Table provider_models {
+  id uuid [pk]
+  provider_code varchar(80) [not null, ref: > providers.code]
+  model_id varchar(200) [not null]
+  display_name varchar(200) [not null]
+  capabilities text[]
+  context_window int
+  input_microusd_per_million bigint
+  output_microusd_per_million bigint
+  active boolean [not null]
+  Indexes { (provider_code, model_id) [unique] }
+}
+
+Table provider_connections {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  owner_user_id uuid [ref: > auth.users.id]
+  scope provider_scope [not null]
+  provider_code varchar(80) [not null, ref: > providers.code]
+  display_name varchar(160) [not null]
+  secret_ciphertext bytea [not null]
+  secret_nonce bytea [not null]
+  key_version int [not null]
+  status varchar(20) [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  revoked_at timestamptz
+}
+
+Table agent_templates {
+  code varchar(80) [pk]
+  name varchar(160) [not null]
+  purpose varchar(300) [not null]
+  instruction text [not null]
+  supported_operations varchar[] [not null]
+  retrieval_policy_json jsonb [not null]
+  output_policy_json jsonb [not null]
+  model_policy_json jsonb [not null]
+  budget_policy_json jsonb [not null]
+  active boolean [not null]
+}
+
+Table agents {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  created_by uuid [not null, ref: > auth.users.id]
+  name varchar(160) [not null]
+  purpose varchar(300) [not null]
+  visibility varchar(20) [not null]
+  template_code varchar(80) [ref: > agent_templates.code]
+  current_version_id uuid [ref: > agent_versions.id]
+  version bigint [not null]
+  is_active boolean [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  archived_at timestamptz
+}
+
+Table agent_versions {
+  id uuid [pk]
+  agent_id uuid [not null, ref: > agents.id]
+  version_number int [not null]
+  instruction text [not null]
+  supported_operations varchar[] [not null]
+  retrieval_policy_json jsonb [not null]
+  output_policy_json jsonb [not null]
+  model_policy_json jsonb [not null]
+  budget_policy_json jsonb [not null]
+  created_by uuid [not null, ref: > auth.users.id]
+  created_at timestamptz [not null]
+  Indexes { (agent_id, version_number) [unique] }
+}
+
+Table chat_threads {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  document_id uuid [not null, ref: > documents.id]
+  created_by uuid [not null, ref: > auth.users.id]
+  title varchar(300) [not null]
+  status thread_status [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table agent_runs {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  document_id uuid [not null, ref: > documents.id]
+  document_version_id uuid [not null, ref: > document_versions.id]
+  chat_thread_id uuid [ref: > chat_threads.id]
+  agent_id uuid [ref: > agents.id]
+  agent_version_id uuid [ref: > agent_versions.id]
+  requested_by uuid [not null, ref: > auth.users.id]
+  provider_connection_id uuid [ref: > provider_connections.id]
+  status run_status [not null]
+  operation varchar(40) [not null]
+  provider_code varchar(80) [not null]
+  model_id varchar(200) [not null]
+  input_snapshot_json jsonb [not null]
+  context_manifest_json jsonb [not null]
+  output_text text
+  grounding_status grounding_status [not null]
+  error_code varchar(100)
+  max_cost_microusd bigint
+  idempotency_key varchar(160)
+  created_at timestamptz [not null]
+  started_at timestamptz
+  completed_at timestamptz
+}
+
+Table agent_run_events {
+  run_id uuid [not null, ref: > agent_runs.id]
+  sequence bigint [not null]
+  event_id uuid [not null]
+  event_type varchar(80) [not null]
+  payload_json jsonb [not null]
+  occurred_at timestamptz [not null]
+  Indexes { (run_id, sequence) [pk] }
+}
+
+Table run_citations {
+  id uuid [pk]
+  run_id uuid [not null, ref: > agent_runs.id]
+  block_id uuid [not null, ref: > document_blocks.id]
+  source_role varchar(20) [not null]
+  rank int [not null]
+  score numeric
+  excerpt text
+  anchor_json jsonb
+}
+
+Table chat_messages {
+  id uuid [pk]
+  thread_id uuid [not null, ref: > chat_threads.id]
+  role message_role [not null]
+  created_by uuid [ref: > auth.users.id]
+  agent_run_id uuid [ref: > agent_runs.id]
+  content_text text [not null]
+  content_json jsonb
+  created_at timestamptz [not null]
+}
+
+Table budget_policies {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  user_id uuid [ref: > auth.users.id]
+  provider_code varchar(80)
+  model_id varchar(200)
+  agent_id uuid [ref: > agents.id]
+  period varchar(30) [not null]
+  limit_microusd bigint [not null]
+  warning_percent int [not null]
+  enforcement varchar(20) [not null]
+  is_active boolean [not null]
+}
+
+Table usage_ledger {
+  id uuid [pk]
+  workspace_id uuid [not null, ref: > workspaces.id]
+  user_id uuid [not null, ref: > auth.users.id]
+  run_id uuid [ref: > agent_runs.id]
+  kind ledger_entry_kind [not null]
+  billable_party varchar(20) [not null]
+  provider_code varchar(80) [not null]
+  model_id varchar(200) [not null]
+  input_tokens int [not null]
+  output_tokens int [not null]
+  amount_microusd bigint [not null]
+  estimated boolean [not null]
+  occurred_at timestamptz [not null]
+}
+
+Table desktop_device_sessions {
+  id uuid [pk]
+  user_id uuid [not null, ref: > auth.users.id]
+  installation_public_id uuid [not null]
+  refresh_credential_hash bytea [not null]
+  platform varchar(40) [not null]
+  architecture varchar(20) [not null]
+  app_version varchar(40) [not null]
+  created_at timestamptz [not null]
+  last_seen_at timestamptz [not null]
+  expires_at timestamptz [not null]
+  revoked_at timestamptz
+}
+
+Table outbox_events {
+  id uuid [pk]
+  workspace_id uuid [ref: > workspaces.id]
+  aggregate_type varchar(80) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(120) [not null]
+  payload_json jsonb [not null]
+  status varchar(20) [not null]
+  next_attempt_at timestamptz [not null]
+  published_at timestamptz
+}
+
+Table audit_logs {
+  id uuid [pk]
+  workspace_id uuid [ref: > workspaces.id]
+  actor_user_id uuid [ref: > auth.users.id]
+  request_id varchar(100)
+  action varchar(120) [not null]
+  target_type varchar(80)
+  target_id uuid
+  metadata_json jsonb [not null]
+  created_at timestamptz [not null]
+}
