@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "concurrently -k --names web,api \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "vite",
@@ -14,6 +18,8 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "lint": "oxlint src server electron",
+    "backend:typecheck": "npm run typecheck --workspaces --if-present",
+    "backend:build": "npm run build --workspaces --if-present",
     "preview": "vite preview",
     "start:api": "tsx server/index.ts"
   },
