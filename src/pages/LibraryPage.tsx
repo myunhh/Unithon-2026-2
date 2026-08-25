@@ -5,6 +5,7 @@ import { Card } from '../components/Card'
 import { PageHeader } from '../components/PageHeader'
 import { Stat } from '../components/Stat'
 import { StatusBadge } from '../components/StatusBadge'
+import { LibraryDocumentTable } from './library/LibraryDocumentTable'
 import {
   advanceDemoPage,
   getDemoPage,
@@ -64,21 +65,37 @@ function LoadingState() {
   )
 }
 
-function DocumentRows({ state }: { state: LibraryDemoViewState }) {
-  const page = getDemoPage(state.pageIndex)
+type DemoControlsProps = {
+  readonly state: LibraryDemoViewState
+  readonly onChooseMode: (mode: LibraryDemoMode) => void
+}
 
+function DemoControls({ state, onChooseMode }: DemoControlsProps) {
   return (
-    <ul className="library-document-list" aria-label={`데모 문서 ${page.pageNumber}페이지`}>
-      {page.items.map((document) => (
-        <li className="library-document-row" key={document.key}>
-          <div className="library-document-summary">
-            <span className="library-document-name">{document.title}</span>
-            <span className="library-document-meta">{document.details}</span>
-          </div>
-          <StatusBadge tone={document.statusTone}>{document.statusLabel}</StatusBadge>
-        </li>
-      ))}
-    </ul>
+    <details className="library-demo-controls">
+      <summary>
+        <span>상태 데모</span>
+        <StatusBadge tone={state.mode === 'error' ? 'error' : state.mode === 'loading' ? 'working' : state.mode === 'empty' ? 'warning' : 'ready'}>
+          {MODE_LABELS[state.mode]}
+        </StatusBadge>
+      </summary>
+      <p className="library-section-description">버튼을 선택하면 목록 표가 해당 상태로 바뀝니다.</p>
+      <div className="library-state-controls" role="group" aria-label="문서 목록 데모 상태 선택">
+        {LIBRARY_DEMO_MODES.map((mode) => (
+          <Button
+            className="library-state-button"
+            key={mode}
+            variant={state.mode === mode ? 'primary' : 'secondary'}
+            aria-pressed={state.mode === mode}
+            onClick={() => onChooseMode(mode)}
+          >
+            {MODE_LABELS[mode]}
+          </Button>
+        ))}
+      </div>
+      <p className="library-state-description" aria-live="polite">{MODE_DESCRIPTIONS[state.mode]}</p>
+      <p className="library-demo-boundary">BE-042가 준비되기 전까지 화면 상태와 커서 이동만 확인하는 고정 fixture입니다. 서버 문서나 개인 정보는 읽지 않습니다.</p>
+    </details>
   )
 }
 
@@ -113,49 +130,39 @@ export function LibraryPage(_props: LibraryPageProps) {
   return (
     <section className="page library-page">
       <PageHeader
-        title="문서 보관함"
-        description="문서 목록과 커서 페이지 이동 상태를 확인합니다. 업로드와 실제 API 연결은 아직 열려 있지 않습니다."
+        title="라이브러리"
+        description="업로드한 논문을 다시 엽니다."
       />
 
       <div className="library-page-stack">
-        <Card className="library-demo-notice" aria-label="FE-020 데모 경계">
-          <div className="library-demo-notice-copy">
-            <div className="library-demo-notice-heading">
-              <h2 className="library-section-title">문서 목록 데모</h2>
-              <StatusBadge tone="warning">MOCK ONLY · FE-020</StatusBadge>
+        <section className="library-upload-layout" aria-label="문서 업로드와 보관함 요약">
+          <Card as="section" className="library-upload-card" aria-label="문서 업로드 (준비 중)">
+            <div className="library-upload-field">
+              <span className="library-field-label" id="library-pdf-label">PDF 파일</span>
+              <div className="library-upload-row">
+                <label className="library-file-dropzone" aria-disabled="true" htmlFor="library-pdf-file">
+                  <span className="library-file-name">파일을 선택하거나 여기로 끌어다 놓으세요</span>
+                  <span className="library-file-copy">PDF · 최대 50MB</span>
+                </label>
+                <Button className="library-upload-button" disabled aria-disabled="true">업로드</Button>
+              </div>
+              <input
+                className="visually-hidden"
+                id="library-pdf-file"
+                type="file"
+                accept="application/pdf"
+                disabled
+                aria-labelledby="library-pdf-label"
+                aria-describedby="library-pdf-help library-pdf-boundary"
+              />
+              <p className="library-upload-help" id="library-pdf-help">업로드한 논문은 비공개로 보관됩니다.</p>
+              <p className="library-upload-boundary" id="library-pdf-boundary" role="note">업로드와 실제 API 연결은 아직 열려 있지 않습니다.</p>
             </div>
-            <p className="library-section-description">
-              BE-042가 준비되기 전까지 화면 상태와 커서 이동만 확인하는 고정 fixture입니다. 서버 문서나 개인 정보는 읽지 않습니다.
-            </p>
-          </div>
-        </Card>
-
-        <Card className="library-state-card" aria-labelledby="library-state-title">
-          <div className="library-card-heading">
-            <div>
-              <h2 className="library-section-title" id="library-state-title">상태 데모</h2>
-              <p className="library-section-description">버튼을 선택하면 목록 카드가 해당 상태로 바뀝니다.</p>
-            </div>
-            <StatusBadge tone={isError ? 'error' : isLoading ? 'working' : isEmpty ? 'warning' : 'ready'}>
-              {MODE_LABELS[state.mode]}
-            </StatusBadge>
-          </div>
-
-          <div className="library-state-controls" role="group" aria-label="문서 목록 데모 상태 선택">
-            {LIBRARY_DEMO_MODES.map((mode) => (
-              <Button
-                className="library-state-button"
-                key={mode}
-                variant={state.mode === mode ? 'primary' : 'secondary'}
-                aria-pressed={state.mode === mode}
-                onClick={() => chooseMode(mode)}
-              >
-                {MODE_LABELS[mode]}
-              </Button>
-            ))}
-          </div>
-          <p className="library-state-description" aria-live="polite">{MODE_DESCRIPTIONS[state.mode]}</p>
-        </Card>
+          </Card>
+          <Card as="aside" className="library-saved-card" aria-label="보관함 요약">
+            <Stat label="저장된 논문" value={isLoading || isEmpty || isError ? '—' : page.savedCount} description="비공개 PDF 기록" />
+          </Card>
+        </section>
 
         <Card
           as="section"
@@ -165,10 +172,7 @@ export function LibraryPage(_props: LibraryPageProps) {
           aria-busy={isLoading}
         >
           <div className="library-document-header">
-            <div>
-              <h2 className="library-section-title" id="library-documents-title">문서 목록</h2>
-              <p className="library-section-description">현재 페이지의 문서와 다음 데모 커서 상태입니다.</p>
-            </div>
+            <h2 className="visually-hidden" id="library-documents-title">문서 목록</h2>
             <div className="library-page-indicator" role="group" aria-label="데모 페이지">
               <span>페이지</span>
               <strong>{isLoading || isEmpty || isError ? '—' : `${page.pageNumber} / ${page.totalPages}`}</strong>
@@ -183,7 +187,7 @@ export function LibraryPage(_props: LibraryPageProps) {
             </Alert>
           ) : null}
           {isEmpty ? <EmptyState /> : null}
-          {!isLoading && !isError && !isEmpty ? <DocumentRows state={state} /> : null}
+          {!isLoading && !isError && !isEmpty ? <LibraryDocumentTable page={page} /> : null}
 
           <nav className="library-pagination" aria-label="데모 페이지 이동">
             <div className="library-pagination-copy">
@@ -197,6 +201,8 @@ export function LibraryPage(_props: LibraryPageProps) {
             ) : null}
           </nav>
         </Card>
+
+        <DemoControls state={state} onChooseMode={chooseMode} />
 
         <div className="library-demo-stats" role="group" aria-label="문서 목록 데모 요약">
           <Stat label="현재 문서" value={isLoading || isEmpty || isError ? '—' : page.items.length} description="화면에 표시된 fixture" />
