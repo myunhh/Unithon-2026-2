@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
 import { authClient, type AuthProfile } from '../domain/auth'
 import { AppLink } from '../routes/AppLink'
 import '../auth.css'
+import { cycleDialogFocus, createDeviceSessionDemoState, reduceDeviceSessionDemo, type DeviceSessionDemoRow } from './account/device-session-demo'
+import './AccountPage.css'
 
 type AccountPageProps = {
   onNavigate: (path: string) => void
@@ -14,6 +16,21 @@ function formatDate(value: string | null): string {
   return Number.isNaN(date.getTime()) ? '정보 없음' : new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
+function assertNever(value: never): never {
+  throw new Error(`처리하지 않은 기기 세션 상태: ${JSON.stringify(value)}`)
+}
+
+function deviceSessionStatusLabel(status: DeviceSessionDemoRow['status']): string {
+  switch (status) {
+    case 'active':
+      return '연결됨'
+    case 'revoked':
+      return '해제됨'
+    default:
+      return assertNever(status)
+  }
+}
+
 export function AccountPage({ onNavigate, onLoggedOut }: AccountPageProps) {
   const [profile, setProfile] = useState<AuthProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -21,7 +38,39 @@ export function AccountPage({ onNavigate, onLoggedOut }: AccountPageProps) {
   const [confirmation, setConfirmation] = useState('')
   const [operation, setOperation] = useState<'idle' | 'password' | 'logout'>('idle')
   const [notice, setNotice] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
+  const [deviceSessionDemo, dispatchDeviceSessionDemo] = useReducer(
+    reduceDeviceSessionDemo,
+    undefined,
+    createDeviceSessionDemoState,
+  )
   const request = useRef<AbortController | null>(null)
+  const revokeConfirmRef = useRef<HTMLButtonElement | null>(null)
+  const dialogRef = useRef<HTMLDialogElement | null>(null)
+  const dialogReturnFocus = useRef<HTMLElement | null>(null)
+  const sessionPanelRef = useRef<HTMLElement | null>(null)
+  const pendingDeviceSession = deviceSessionDemo.pendingId === null
+    ? null
+    : deviceSessionDemo.sessions.find((session) => session.id === deviceSessionDemo.pendingId) ?? null
+
+  useEffect(() => {
+    if (!pendingDeviceSession) return
+    const dialog = dialogRef.current
+    const activeElement = document.activeElement
+    const sessionPanel = sessionPanelRef.current
+    dialogReturnFocus.current = activeElement instanceof HTMLElement ? activeElement : null
+    if (dialog && !dialog.open) dialog.showModal()
+    const focusConfirm = window.setTimeout(() => revokeConfirmRef.current?.focus(), 0)
+    return () => {
+      window.clearTimeout(focusConfirm)
+      if (dialog?.open) dialog.close()
+      const returnFocus = dialogReturnFocus.current
+      window.setTimeout(() => {
+        if (returnFocus?.isConnected) returnFocus.focus()
+        else if (sessionPanel?.isConnected) sessionPanel.focus()
+      }, 0)
+      dialogReturnFocus.current = null
+    }
+  }, [pendingDeviceSession])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -101,6 +150,88 @@ export function AccountPage({ onNavigate, onLoggedOut }: AccountPageProps) {
 
       {notice ? <p className={`auth-notice auth-notice--${notice.tone}`} aria-live="polite">{notice.text}</p> : null}
       {loading ? <p className="account-loading" role="status">계정 정보를 불러오는 중…</p> : null}
+
+      <section ref={sessionPanelRef} className="account-panel account-session-panel" aria-labelledby="account-session-title" tabIndex={-1}>
+        <header className="account-session-heading">
+          <div>
+            <p className="public-kicker">보안</p>
+            <h2 id="account-session-title">기기 세션</h2>
+            <p>PaperBridge에 연결된 데스크톱 기기를 확인하고 접근을 해제합니다.</p>
+          </div>
+          <span className="account-demo-badge">데모 상태</span>
+        </header>
+
+        <div className="account-demo-callout" role="note">
+          <strong>실제 기기 API 연결 전</strong>
+          <span>아래 목록은 화면 확인을 위한 샘플입니다. 연결 해제는 이 데모 화면에서만 반영됩니다.</span>
+        </div>
+
+        {deviceSessionDemo.notice ? <p className="account-session-notice" role="status" aria-live="polite">{deviceSessionDemo.notice}</p> : null}
+
+        <div className="account-session-summary" aria-label="기기 세션 요약">
+          <div>
+            <span>연결된 기기</span>
+            <strong>{deviceSessionDemo.sessions.filter((session) => session.status === 'active').length}개</strong>
+          </div>
+          <div>
+            <span>데모에서 해제됨</span>
+            <strong>{deviceSessionDemo.sessions.filter((session) => session.status === 'revoked').length}개</strong>
+          </div>
+        </div>
+
+        <ul className="account-session-list" aria-label="데모 기기 세션 목록">
+          {deviceSessionDemo.sessions.map((session) => (
+            <li className="account-session-row" data-status={session.status} data-current={session.isCurrent} key={session.id}>
+              <div className="account-session-device">
+                <div className="account-session-title-row">
+                  <h3>{session.deviceName}</h3>
+                  <span className={`account-session-status account-session-status--${session.status}`}>
+                    {session.isCurrent ? '현재 기기' : deviceSessionStatusLabel(session.status)}
+                  </span>
+                </div>
+                <p>{session.deviceDetail}</p>
+                <dl className="account-session-facts">
+                  <div><dt>앱 버전</dt><dd>{session.appVersion}</dd></div>
+                  <div><dt>최근 활동</dt><dd>{session.lastActive}</dd></div>
+                  <div><dt>등록</dt><dd>{session.createdAt}</dd></div>
+                </dl>
+              </div>
+              <div className="account-session-action">
+                {session.isCurrent ? <span className="account-session-action-note">이 기기는 연결 해제할 수 없습니다.</span> : session.status === 'revoked' ? <span className="account-session-action-note">데모에서 해제됨</span> : <button
+                  className="button button--secondary"
+                  type="button"
+                  onClick={() => dispatchDeviceSessionDemo({ kind: 'request-revoke', id: session.id })}
+                  aria-label={`${session.deviceName} 연결 해제 확인`}
+                >연결 해제</button>}
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {pendingDeviceSession ? <dialog
+          ref={dialogRef}
+          className="account-session-dialog"
+          aria-labelledby="account-session-dialog-title"
+          aria-describedby="account-session-dialog-description"
+          aria-modal="true"
+          onKeyDown={(event) => cycleDialogFocus(
+            event,
+            document.activeElement,
+            Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button')).filter((button) => !button.disabled),
+          )}
+          onCancel={(event) => {
+            event.preventDefault()
+            dispatchDeviceSessionDemo({ kind: 'cancel-revoke' })
+          }}
+        >
+          <h2 id="account-session-dialog-title">연결을 해제할까요?</h2>
+          <p id="account-session-dialog-description"><strong>{pendingDeviceSession.deviceName}</strong>에서 PaperBridge 접근을 해제합니다. 이 동작은 데모 상태에만 적용됩니다.</p>
+          <div className="account-session-dialog-actions">
+            <button className="button button--secondary" type="button" onClick={() => dispatchDeviceSessionDemo({ kind: 'cancel-revoke' })}>취소</button>
+            <button ref={revokeConfirmRef} className="button button--danger" type="button" onClick={() => dispatchDeviceSessionDemo({ kind: 'confirm-revoke' })}>연결 해제 확인</button>
+          </div>
+        </dialog> : null}
+      </section>
 
       {profile ? <div className="account-grid">
         <section className="account-panel" aria-labelledby="account-profile-title">
