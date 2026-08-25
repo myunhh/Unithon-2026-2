@@ -159,7 +159,7 @@ export function LibraryPage(_props: LibraryPageProps) {
               <p className="library-upload-boundary" id="library-pdf-boundary" role="note">업로드와 실제 API 연결은 아직 열려 있지 않습니다.</p>
             </div>
           </Card>
-          <Card as="aside" className="library-saved-card" aria-label="보관함 요약">
+          <Card as="section" className="library-saved-card" aria-label="보관함 요약">
             <Stat label="저장된 논문" value={isLoading || isEmpty || isError ? '—' : page.savedCount} description="비공개 PDF 기록" />
           </Card>
         </section>

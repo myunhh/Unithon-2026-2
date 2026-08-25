@@ -148,13 +148,13 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       </header>
 
       <section className="login-card" aria-labelledby="login-title">
-        <aside className="login-demo-banner" aria-label="로그인 및 가입 데모">
+        <div className="login-demo-banner" role="note" aria-label="로그인 및 가입 데모">
           <div className="login-demo-banner-heading">
             <span className="login-demo-chip">데모 모드</span>
             <span>실제 요청은 전송되지 않습니다.</span>
           </div>
           <p>입력 검증, 키보드 포커스, 오류 재시도 흐름만 확인합니다.</p>
-        </aside>
+        </div>
 
         <div className="login-tabs" role="tablist" aria-label="로그인 및 가입 방식">
           <button

@@ -62,7 +62,7 @@ export function ReaderSidePanel({ panel, fileStatus, parseStatus, graph, selecti
     document.getElementById(`reader-tab-${nextPanel}`)?.focus()
   }
   return (
-    <Card as="aside" className="reader-sidepanel" aria-label="리더 세부 정보">
+    <Card as="section" className="reader-sidepanel" aria-label="리더 세부 정보">
       <div className="reader-panel-tabs" role="tablist" aria-label="리더 보조 패널">
         {READER_PANELS.map((tab) => <button className="reader-panel-tab" id={`reader-tab-${tab}`} key={tab} type="button" role="tab" tabIndex={panel === tab ? 0 : -1} aria-selected={panel === tab} aria-controls={`reader-panel-${tab}`} onClick={() => onPanelChange(tab)} onKeyDown={(event) => handlePanelTabKeyDown(event, tab)}>{tab === 'info' ? '정보' : tab === 'chat' ? 'Chat' : '하이라이트'}</button>)}
       </div>
