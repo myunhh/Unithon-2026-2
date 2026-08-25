@@ -35,6 +35,8 @@
     "cross-env": "^10.1.0",
     "electron": "^44.0.0",
     "oxlint": "^1.79.0",
+    "react-grab": "^0.2.0",
+    "react-scan": "^0.5.7",
     "tsx": "^4.23.12",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
