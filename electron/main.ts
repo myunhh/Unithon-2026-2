@@ -1,24 +1,17 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import type { Server } from 'node:http'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createApiServer } from '../server/app.js'
-import { loadServerEnv } from '../server/env.js'
 import { IPC_CHANNELS } from './ipc.js'
 import { AgyProvider, ClaudeCodeProvider, CodexProvider } from './agent-runtime/index.js'
 import { registerDesktopAgentIpc } from './desktop-agent-ipc.js'
 import { DesktopAgentService } from './desktop-agent-service.js'
 import { prepareDesktopAgentWorkspace } from './desktop-agent-workspace.js'
-import { providerEncryptionKeyForInstallation } from './provider-encryption-key.js'
-import { sessionSecretForInstallation as persistedSessionSecretForInstallation } from './installation-session-secret.js'
 import { openExternalSafely } from './safe-external.js'
 
 const currentFile = fileURLToPath(import.meta.url)
 const currentDirectory = dirname(currentFile)
 const developmentServerUrl = process.env.VITE_DEV_SERVER_URL
 
-let desktopServer: Server | undefined
-let desktopOrigin: string | undefined
 let rendererOrigin: string | undefined
 let desktopAgentService: DesktopAgentService | undefined
 let quitting = false
@@ -44,64 +37,8 @@ function isTrustedIpcSender(event: Electron.IpcMainInvokeEvent): boolean {
   return !event.sender.isDestroyed() && event.senderFrame === event.sender.mainFrame && isPaperBridgeUrl(event.senderFrame.url)
 }
 
-async function sessionSecretForInstallation(): Promise<string> {
-  const supplied = process.env.PAPERBRIDGE_SESSION_SECRET?.trim()
-  if (supplied) return supplied
-  return persistedSessionSecretForInstallation(app.getPath('userData'))
-}
-
-async function providerEncryptionKeyForDesktopServer(): Promise<string | undefined> {
-  if (app.isPackaged) return providerEncryptionKeyForInstallation(app.getPath('userData'))
-  return process.env.PAPERBRIDGE_ENCRYPTION_KEY?.trim() || undefined
-}
-
-async function startPackagedServer(): Promise<string> {
-  if (desktopOrigin) return desktopOrigin
-
-  const sessionSecret = await sessionSecretForInstallation()
-  const providerEncryptionKey = await providerEncryptionKeyForDesktopServer()
-  // Port 0 is replaced with the assigned loopback port before the BrowserWindow
-  // can issue a request. The renderer only ever sees the resulting same origin.
-  const environment = loadServerEnv({
-    ...process.env,
-    APP_ORIGIN: 'http://127.0.0.1:0',
-    NODE_ENV: 'production',
-    PAPERBRIDGE_SESSION_SECRET: sessionSecret,
-    ...(providerEncryptionKey ? { PAPERBRIDGE_ENCRYPTION_KEY: providerEncryptionKey } : {}),
-  })
-  const server = createApiServer(environment, { staticRoot: join(currentDirectory, '../../dist') })
-  await new Promise<void>((resolveListen, rejectListen) => {
-    const onError = (error: Error) => {
-      server.removeListener('listening', onListening)
-      rejectListen(error)
-    }
-    const onListening = () => {
-      server.removeListener('error', onError)
-      resolveListen()
-    }
-    server.once('error', onError)
-    server.once('listening', onListening)
-    server.listen(0, '127.0.0.1')
-  })
-
-  const address = server.address()
-  if (!address || typeof address === 'string') {
-    server.close()
-    throw new Error('PaperBridge could not determine its loopback server address.')
-  }
-
-  desktopOrigin = `http://127.0.0.1:${address.port}`
-  environment.appOrigin = desktopOrigin
-  desktopServer = server
-  return desktopOrigin
-}
-
-async function stopPackagedServer(): Promise<void> {
-  if (!desktopServer) return
-  const server = desktopServer
-  desktopServer = undefined
-  desktopOrigin = undefined
-  await new Promise<void>((resolveStop) => server.close(() => resolveStop()))
+function unsupportedPackagedDesktop(): never {
+  throw new Error('Packaged desktop requires the remote API loopback bridge; local backend hosting is unsupported until FE-007.')
 }
 
 function createMainWindow(origin: string) {
@@ -169,7 +106,7 @@ async function initializeDesktopAgentService(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  const origin = developmentServerUrl ?? await startPackagedServer()
+  const origin = developmentServerUrl ?? unsupportedPackagedDesktop()
   rendererOrigin = origin
   await initializeDesktopAgentService()
   createMainWindow(origin)
@@ -187,7 +124,6 @@ app.on('before-quit', (event) => {
   event.preventDefault()
   void (async () => {
     await desktopAgentService?.shutdown()
-    await stopPackagedServer()
   })().catch(() => undefined).finally(() => app.exit(0))
 })
 
