@@ -1,16 +1,28 @@
 import { createApiServer } from './app.js'
 import { loadServerEnv } from './env.js'
 
-const environment = loadServerEnv()
-const server = createApiServer(environment)
+function startServer() {
+  let environment: ReturnType<typeof loadServerEnv>
+  try {
+    environment = loadServerEnv()
+  } catch {
+    console.error('PaperBridge API configuration is invalid.')
+    process.exitCode = 1
+    return
+  }
 
-server.listen(environment.port, '127.0.0.1', () => {
-  console.info(`PaperBridge API listening on http://127.0.0.1:${environment.port}`)
-})
+  const server = createApiServer(environment)
 
-function stopServer() {
-  server.close(() => process.exit(0))
+  server.listen(environment.port, '127.0.0.1', () => {
+    console.info(`PaperBridge API listening on http://127.0.0.1:${environment.port}`)
+  })
+
+  function stopServer() {
+    server.close(() => process.exit(0))
+  }
+
+  process.once('SIGINT', stopServer)
+  process.once('SIGTERM', stopServer)
 }
 
-process.once('SIGINT', stopServer)
-process.once('SIGTERM', stopServer)
+startServer()

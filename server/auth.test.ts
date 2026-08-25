@@ -54,7 +54,7 @@ function emptyStore(): DocumentStore {
 
 async function start(options: Parameters<typeof createApiServer>[1] = {}) {
   const environment = loadServerEnv({
-    APP_ORIGIN: appOrigin,
+    APP_ORIGINS: appOrigin,
     PAPERBRIDGE_SESSION_SECRET: secret,
   })
   const server = createApiServer(environment, options)

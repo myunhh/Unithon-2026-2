@@ -51,12 +51,19 @@ describe('Supabase provider-state gateway', () => {
   })
 
   it('keeps provider persistence disabled when Supabase or the parsed encryption key is absent', () => {
-    const noKey = loadServerEnv({ SUPABASE_URL: 'https://project.supabase.co', SUPABASE_SECRET_KEY: 'service-key' })
+    const noKey = loadServerEnv({
+      APP_ORIGINS: 'http://127.0.0.1:5173',
+      PAPERBRIDGE_SESSION_SECRET: 'test-only-provider-session-secret',
+      SUPABASE_URL: 'https://project.supabase.co',
+      SUPABASE_SECRET_KEY: 'test-only-service-key',
+    })
     expect(createProviderRepositoryFactory(noKey, fakeClient({}).client)('0123456789abcdefghijklmnopqrstuv')).toBeNull()
 
     const configured = loadServerEnv({
+      APP_ORIGINS: 'http://127.0.0.1:5173',
+      PAPERBRIDGE_SESSION_SECRET: 'test-only-provider-session-secret',
       SUPABASE_URL: 'https://project.supabase.co',
-      SUPABASE_SECRET_KEY: 'service-key',
+      SUPABASE_SECRET_KEY: 'test-only-service-key',
       PAPERBRIDGE_ENCRYPTION_KEY: `base64url:${Buffer.alloc(32, 6).toString('base64url')}`,
     })
     expect(createProviderRepositoryFactory(configured, fakeClient({}).client)('0123456789abcdefghijklmnopqrstuv')).not.toBeNull()

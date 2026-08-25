@@ -2,13 +2,12 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { readFile, stat } from 'node:fs/promises'
 import { extname, relative, resolve } from 'node:path'
 import Busboy from 'busboy'
-import type { ServerEnv } from './env.js'
+import { MAX_ACTIVE_PROVIDER_RUNS, type ServerEnv } from './env.js'
 import {
   createDocumentStore,
   type DocumentStore,
   DocumentStorageError,
   DocumentValidationError,
-  MAX_PDF_BYTES,
   validatePdfUpload,
 } from './documents.js'
 import { createHighlightStore, type CreateHighlightInput, type HighlightStore } from './highlights.js'
@@ -31,14 +30,11 @@ import {
 } from './auth.js'
 import type { AuthRateLimiter, AuthService } from './auth.js'
 
-const MAX_MULTIPART_BYTES = MAX_PDF_BYTES + 64 * 1024
 const MAX_MULTIPART_TITLE_BYTES = 1024
 const MAX_PROVIDER_JSON_BYTES = 32 * 1024
 const MAX_PROVIDER_PROMPT_BYTES = 12 * 1024
 const MAX_PROVIDER_CONTEXT_BYTES = 24 * 1024
 const MAX_PROVIDER_INPUT_BYTES = 32 * 1024
-const MAX_ACTIVE_PROVIDER_RUNS = 32
-const MAX_ACTIVE_PROVIDER_RUNS_PER_SESSION = 4
 
 type HealthResponse = {
   name: 'PaperBridge API'
@@ -94,13 +90,15 @@ type ProviderRunInput = {
 class ActiveProviderRuns {
   readonly #runs = new Map<string, { sessionId: string; controller: AbortController }>()
 
+  constructor(private readonly maxActiveRunsPerSession: number) {}
+
   start(sessionId: string, runId: string): AbortController {
     const key = this.key(sessionId, runId)
     if (this.#runs.has(key)) throw new HttpError(409, 'That provider run is already active.')
     if (this.#runs.size >= MAX_ACTIVE_PROVIDER_RUNS) throw new HttpError(503, 'Provider capacity is temporarily unavailable.')
     let forSession = 0
     for (const active of this.#runs.values()) if (active.sessionId === sessionId) forSession += 1
-    if (forSession >= MAX_ACTIVE_PROVIDER_RUNS_PER_SESSION) {
+    if (forSession >= this.maxActiveRunsPerSession) {
       throw new HttpError(429, 'Too many provider runs are active for this session.')
     }
     const controller = new AbortController()
@@ -138,12 +136,13 @@ function isAllowedOrigin(request: IncomingMessage, environment: ServerEnv): bool
   // requests must prove they came from this exact PaperBridge origin, which
   // prevents a cross-site form from creating or using a library session.
   if (!origin) return request.method === 'GET' || request.method === 'HEAD'
-  return origin === environment.appOrigin
+  return origin === environment.appOrigin || environment.appOrigins.includes(origin)
 }
 
 function applyCorsHeaders(request: IncomingMessage, response: ServerResponse, environment: ServerEnv) {
-  if (request.headers.origin === environment.appOrigin) {
-    response.setHeader('access-control-allow-origin', environment.appOrigin)
+  const origin = request.headers.origin
+  if (origin && (origin === environment.appOrigin || environment.appOrigins.includes(origin))) {
+    response.setHeader('access-control-allow-origin', origin)
     response.setHeader('access-control-allow-credentials', 'true')
     response.setHeader('vary', 'Origin')
   }
@@ -215,7 +214,8 @@ function contentLengthFrom(request: IncomingMessage): number | null {
   return parsed
 }
 
-function parsePdfUpload(request: IncomingMessage): Promise<ParsedUpload> {
+function parsePdfUpload(request: IncomingMessage, maxPdfBytes: number): Promise<ParsedUpload> {
+  const maxMultipartBytes = maxPdfBytes + 64 * 1024
   return new Promise((resolveUpload, rejectUpload) => {
     const contentType = request.headers['content-type']
     if (!contentType?.toLowerCase().startsWith('multipart/form-data')) {
@@ -225,9 +225,9 @@ function parsePdfUpload(request: IncomingMessage): Promise<ParsedUpload> {
     }
 
     try {
-      if ((contentLengthFrom(request) ?? 0) > MAX_MULTIPART_BYTES) {
+      if ((contentLengthFrom(request) ?? 0) > maxMultipartBytes) {
         request.resume()
-        rejectUpload(new HttpError(413, 'PDF files must be 50 MB or smaller.'))
+        rejectUpload(new HttpError(413, 'PDF files exceed the configured size limit.'))
         return
       }
     } catch (error) {
@@ -269,8 +269,8 @@ function parsePdfUpload(request: IncomingMessage): Promise<ParsedUpload> {
 
     const onRequestData = (chunk: Buffer) => {
       requestBytes += chunk.byteLength
-      if (requestBytes > MAX_MULTIPART_BYTES) {
-        fail(new HttpError(413, 'PDF files must be 50 MB or smaller.'))
+      if (requestBytes > maxMultipartBytes) {
+        fail(new HttpError(413, 'PDF files exceed the configured size limit.'))
       }
     }
     const onRequestAborted = () => fail(new HttpError(400, 'The upload was interrupted.'))
@@ -284,7 +284,7 @@ function parsePdfUpload(request: IncomingMessage): Promise<ParsedUpload> {
           fieldSize: MAX_MULTIPART_TITLE_BYTES,
           fields: 1,
           files: 1,
-          fileSize: MAX_PDF_BYTES,
+          fileSize: maxPdfBytes,
           // Busboy emits partsLimit as soon as it reaches the configured
           // count, so leave one parser slot and enforce our two-part contract
           // explicitly below.
@@ -334,8 +334,8 @@ function parsePdfUpload(request: IncomingMessage): Promise<ParsedUpload> {
       stream.on('data', (chunk: Buffer) => {
         if (settled || !file) return
         file.byteLength += chunk.byteLength
-        if (file.byteLength > MAX_PDF_BYTES) {
-          fail(new HttpError(413, 'PDF files must be 50 MB or smaller.'))
+        if (file.byteLength > maxPdfBytes) {
+          fail(new HttpError(413, 'PDF files exceed the configured size limit.'))
           return
         }
         file.bytes.push(chunk)
@@ -354,11 +354,14 @@ function parsePdfUpload(request: IncomingMessage): Promise<ParsedUpload> {
       void (async () => {
         if (settled) return
         if (!file) return fail(new HttpError(400, 'Choose a PDF file to upload.'))
-        if (file.limited) return fail(new HttpError(413, 'PDF files must be 50 MB or smaller.'))
+        if (file.limited) return fail(new HttpError(413, 'PDF files exceed the configured size limit.'))
 
         const bytes = Buffer.concat(file.bytes, file.byteLength)
         try {
-          const verifiedPageCount = await validatePdfUpload({ bytes, originalFileName: file.originalFileName, mimeType: file.mimeType, title })
+          const verifiedPageCount = await validatePdfUpload(
+            { bytes, originalFileName: file.originalFileName, mimeType: file.mimeType, title },
+            maxPdfBytes,
+          )
           if (settled) return
           settled = true
           cleanupListeners()
@@ -847,7 +850,7 @@ async function handleRequest(
   }
 
   if (request.method === 'POST' && url.pathname === '/api/documents') {
-    const upload = await parsePdfUpload(request)
+    const upload = await parsePdfUpload(request, environment.maxPdfBytes)
     const document = await documentStore().upload(upload)
     writeJson(response, 201, { document })
     return
@@ -985,7 +988,7 @@ export function createApiServer(environment: ServerEnv, options: ApiServerOption
       : (sessionId, documentId) => createHighlightStore(environment, sessionId, documentId))
   const providerRepositoryForSession = options.providerRepositoryForSession ?? createProviderRepositoryFactory(environment)
   const providerAdapter = options.providerAdapter ?? defaultOpenRouterAdapter()
-  const activeProviderRuns = new ActiveProviderRuns()
+  const activeProviderRuns = new ActiveProviderRuns(environment.maxActiveRunsPerUser)
   const authService = options.authService === undefined ? createSupabaseAuthService(environment) : options.authService
   const authRateLimiter = options.authRateLimiter ?? new InMemoryAuthRateLimiter()
   return createServer((request, response) => {

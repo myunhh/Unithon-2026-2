@@ -72,10 +72,14 @@ function immediateAdapter(calls: Array<Record<string, unknown>>): OpenRouterAdap
   return new OpenRouterAdapter({ fetch })
 }
 
-async function startServer(options: ApiServerOptions): Promise<{ origin: string; close: () => Promise<void> }> {
+async function startServer(
+  options: ApiServerOptions,
+  maxActiveRunsPerUser = 4,
+): Promise<{ origin: string; close: () => Promise<void> }> {
   const environment = loadServerEnv({
-    APP_ORIGIN: 'http://127.0.0.1:5173',
+    APP_ORIGINS: 'http://127.0.0.1:5173',
     PAPERBRIDGE_SESSION_SECRET: 'provider-api-test-session-secret',
+    PAPERBRIDGE_MAX_ACTIVE_RUNS_PER_USER: String(maxActiveRunsPerUser),
   })
   const server: Server = createApiServer(environment, options)
   server.listen(0, '127.0.0.1')
@@ -234,8 +238,7 @@ describe('PaperBridge provider API', () => {
     let upstreamSignal: AbortSignal | undefined
     const adapter = new OpenRouterAdapter({
       fetch: async (_url, init) => {
-        const payload = JSON.parse(init.body) as Record<string, unknown>
-        if (payload.stream === false) return { ok: true, status: 200, json: async () => ({ id: 'test', choices: [{ message: { content: 'OK' } }] }) }
+        if (init.body.includes('"stream":false')) return { ok: true, status: 200, json: async () => ({ id: 'test', choices: [{ message: { content: 'OK' } }] }) }
         upstreamSignal = init.signal
         markFetchStarted?.()
         return {
@@ -280,6 +283,57 @@ describe('PaperBridge provider API', () => {
       expect(ownCancel.status).toBe(204)
       expect(upstreamSignal?.aborted).toBe(true)
       expect(await firstRun.text()).toContain('"code":"cancelled"')
+    } finally {
+      await server.close()
+    }
+  })
+
+  it('enforces the configured per-session active-run limit', async () => {
+    let markFetchStarted: (() => void) | undefined
+    const fetchStarted = new Promise<void>((resolve) => { markFetchStarted = resolve })
+    const adapter = new OpenRouterAdapter({
+      fetch: async (_url, init) => {
+        if (init.body.includes('"stream":false')) return { ok: true, status: 200, json: async () => ({ id: 'test', choices: [{ message: { content: 'OK' } }] }) }
+        markFetchStarted?.()
+        return {
+          ok: true,
+          status: 200,
+          body: {
+            async *[Symbol.asyncIterator]() {
+              await new Promise<void>((resolve) => {
+                if (init.signal.aborted) {
+                  resolve()
+                  return
+                }
+                init.signal.addEventListener('abort', () => resolve(), { once: true })
+              })
+              yield new Uint8Array()
+              throw new Error('provider transport cancelled')
+            },
+          },
+        }
+      },
+    })
+    const server = await startServer({ documents: documents(), providerRepositoryForSession: providerRepositories(), providerAdapter: adapter }, 1)
+    try {
+      const cookie = cookieFrom(await fetch(`${server.origin}/api/health`))
+      await fetch(`${server.origin}/api/providers/openrouter`, {
+        method: 'PUT', headers: jsonHeaders(cookie), body: JSON.stringify({ apiKey: 'sk-or-v1-test-only-key', modelId: 'openai/gpt-4o-mini' }),
+      })
+      const firstRun = fetch(`${server.origin}/api/providers/openrouter/runs`, {
+        method: 'POST', headers: jsonHeaders(cookie), body: JSON.stringify(runInput),
+      })
+      await fetchStarted
+
+      const secondRun = await fetch(`${server.origin}/api/providers/openrouter/runs`, {
+        method: 'POST', headers: jsonHeaders(cookie), body: JSON.stringify({ ...runInput, runId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' }),
+      })
+      expect(secondRun.status).toBe(429)
+
+      await fetch(`${server.origin}/api/providers/openrouter/runs/${runInput.runId}`, {
+        method: 'DELETE', headers: jsonHeaders(cookie),
+      })
+      expect(await (await firstRun).text()).toContain('"code":"cancelled"')
     } finally {
       await server.close()
     }

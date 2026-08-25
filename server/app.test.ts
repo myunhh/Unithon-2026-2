@@ -81,10 +81,15 @@ function createHighlightStore(): HighlightStore {
   }
 }
 
-async function startServer(options: Parameters<typeof createApiServer>[1] = {}) {
+async function startServer(
+  options: Parameters<typeof createApiServer>[1] = {},
+  appOrigins = 'http://127.0.0.1:5173',
+  maxPdfBytes?: number,
+) {
   const environment = loadServerEnv({
-    APP_ORIGIN: 'http://127.0.0.1:5173',
+    APP_ORIGINS: appOrigins,
     PAPERBRIDGE_SESSION_SECRET: 'deterministic-test-session-secret',
+    ...(maxPdfBytes === undefined ? {} : { PAPERBRIDGE_MAX_PDF_BYTES: String(maxPdfBytes) }),
   })
   const server = createApiServer(environment, options)
   server.listen(0, '127.0.0.1')
@@ -152,6 +157,21 @@ describe('PaperBridge API', () => {
 
       const originlessWrite = await fetch(`${server.origin}/api/documents`, { method: 'POST', body: pdfForm() })
       expect(originlessWrite.status).toBe(403)
+    } finally {
+      await server.close()
+    }
+  })
+
+  it('allows every configured CORS origin and rejects an unlisted origin', async () => {
+    const secondaryOrigin = 'https://desktop.example.test'
+    const server = await startServer({ documents: createDocumentStore() }, `http://127.0.0.1:5173,${secondaryOrigin}`)
+    try {
+      const allowed = await fetch(`${server.origin}/api/health`, { headers: { origin: secondaryOrigin } })
+      expect(allowed.status).toBe(200)
+      expect(allowed.headers.get('access-control-allow-origin')).toBe(secondaryOrigin)
+
+      const forbidden = await fetch(`${server.origin}/api/health`, { headers: { origin: 'https://example.com' } })
+      expect(forbidden.status).toBe(403)
     } finally {
       await server.close()
     }
@@ -245,6 +265,22 @@ describe('PaperBridge API', () => {
     const server = await startServer({ documents: createDocumentStore() })
     try {
       await expect(oversizedContentLengthPost(server.origin)).resolves.toBe(413)
+    } finally {
+      await server.close()
+    }
+  })
+
+  it('enforces the configured PDF maximum at the API boundary', async () => {
+    const documents = createDocumentStore()
+    const server = await startServer({ documents }, 'http://127.0.0.1:5173', 1)
+    try {
+      const response = await fetch(`${server.origin}/api/documents`, {
+        method: 'POST',
+        headers: { origin: 'http://127.0.0.1:5173' },
+        body: pdfForm(),
+      })
+      expect(response.status).toBe(413)
+      expect(documents.uploads).toHaveLength(0)
     } finally {
       await server.close()
     }

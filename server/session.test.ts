@@ -8,7 +8,7 @@ const secret = 'deterministic-test-session-secret'
 describe('PaperBridge session cookies', () => {
   it('uses a signed opaque cookie and adds Secure only for HTTPS origins', () => {
     const httpsEnvironment = loadServerEnv({
-      APP_ORIGIN: 'https://paperbridge.example.test',
+      APP_ORIGINS: 'https://paperbridge.example.test',
       PAPERBRIDGE_SESSION_SECRET: secret,
     })
     const serialized = serializeSessionCookie(sessionId, httpsEnvironment)

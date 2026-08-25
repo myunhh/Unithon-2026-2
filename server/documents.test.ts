@@ -42,6 +42,10 @@ describe('document upload validation', () => {
     })).rejects.toThrow('50 MB')
   })
 
+  it('enforces the configured PDF maximum before parsing', async () => {
+    await expect(validatePdfUpload(baseUpload, baseUpload.bytes.byteLength - 1)).rejects.toThrow('configured size limit')
+  })
+
   it('keeps filenames and derived titles safe for metadata and downloads', () => {
     expect(sanitizeFileName('../study\u0000.pdf')).toBe('.. study .pdf')
     expect(titleFromUpload(undefined, 'study.pdf')).toBe('study')

@@ -186,12 +186,14 @@ export function hasPdfMagicBytes(bytes: Uint8Array): boolean {
     && bytes[4] === 0x2d
 }
 
-export async function validatePdfUpload(input: UploadInput): Promise<number> {
+export async function validatePdfUpload(input: UploadInput, maxPdfBytes = MAX_PDF_BYTES): Promise<number> {
   if (input.mimeType.toLowerCase() !== 'application/pdf') {
     throw new DocumentValidationError('Only application/pdf uploads are accepted.')
   }
-  if (input.bytes.byteLength > MAX_PDF_BYTES) {
-    throw new DocumentValidationError('PDF files must be 50 MB or smaller.')
+  if (input.bytes.byteLength > maxPdfBytes) {
+    throw new DocumentValidationError(
+      maxPdfBytes === MAX_PDF_BYTES ? 'PDF files must be 50 MB or smaller.' : 'PDF files exceed the configured size limit.',
+    )
   }
   if (!hasPdfMagicBytes(input.bytes)) {
     throw new DocumentValidationError('The uploaded file does not contain PDF magic bytes.')
@@ -328,10 +330,10 @@ export async function reconcileOrphanedUpload(
   return recorded ? 'recorded' : 'unrecorded'
 }
 
-function bucketOptions() {
+function bucketOptions(maxPdfBytes: number) {
   return {
     public: false,
-    fileSizeLimit: MAX_PDF_BYTES,
+    fileSizeLimit: maxPdfBytes,
     allowedMimeTypes: ['application/pdf'],
   }
 }
@@ -342,7 +344,7 @@ export class SupabaseDocumentStore implements DocumentStore {
 
   private readonly sessionId: string
 
-  constructor(private readonly client: SupabaseClient, sessionId: string) {
+  constructor(private readonly client: SupabaseClient, sessionId: string, private readonly maxPdfBytes: number) {
     this.sessionId = requireSessionId(sessionId)
     this.stateGateway = createSupabaseStateGateway(client, documentStateIdForSession(this.sessionId))
   }
@@ -355,7 +357,7 @@ export class SupabaseDocumentStore implements DocumentStore {
   }
 
   async upload(input: UploadInput): Promise<LibraryDocument> {
-    const pageCount = input.verifiedPageCount ?? await validatePdfUpload(input)
+    const pageCount = input.verifiedPageCount ?? await validatePdfUpload(input, this.maxPdfBytes)
     await this.ensurePrivateBucket()
 
     const originalFileName = sanitizeFileName(input.originalFileName)
@@ -428,13 +430,13 @@ export class SupabaseDocumentStore implements DocumentStore {
     const existing = await this.client.storage.getBucket(PDF_BUCKET)
     if (existing.data) {
       if (existing.data.public) {
-        const { error } = await this.client.storage.updateBucket(PDF_BUCKET, bucketOptions())
+        const { error } = await this.client.storage.updateBucket(PDF_BUCKET, bucketOptions(this.maxPdfBytes))
         if (error) throw new DocumentStorageError()
       }
       return
     }
 
-    const created = await this.client.storage.createBucket(PDF_BUCKET, bucketOptions())
+    const created = await this.client.storage.createBucket(PDF_BUCKET, bucketOptions(this.maxPdfBytes))
     if (!created.error) return
 
     // A parallel server may have created the same private bucket. Re-read it to
@@ -442,7 +444,7 @@ export class SupabaseDocumentStore implements DocumentStore {
     const afterRace = await this.client.storage.getBucket(PDF_BUCKET)
     if (afterRace.data) {
       if (afterRace.data.public) {
-        const { error } = await this.client.storage.updateBucket(PDF_BUCKET, bucketOptions())
+        const { error } = await this.client.storage.updateBucket(PDF_BUCKET, bucketOptions(this.maxPdfBytes))
         if (error) throw new DocumentStorageError()
       }
       return
@@ -454,5 +456,5 @@ export class SupabaseDocumentStore implements DocumentStore {
 
 export function createDocumentStore(environment: ServerEnv, sessionId: string): DocumentStore | null {
   const client = createServerSupabaseClient(environment)
-  return client ? new SupabaseDocumentStore(client, sessionId) : null
+  return client ? new SupabaseDocumentStore(client, sessionId, environment.maxPdfBytes) : null
 }
