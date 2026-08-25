@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from './components/AppShell'
 import { authClient } from './domain/auth'
-import { AccountPage } from './pages/AccountPage'
-import { LandingPage } from './pages/LandingPage'
-import { LibraryPage } from './pages/LibraryPage'
-import { LoginPage } from './pages/LoginPage'
-import { ReaderPage } from './pages/ReaderPage'
-import { SettingsPage } from './pages/SettingsPage'
+import { lazyRoutePages } from './routes/lazyRoutePages'
+import { RouteBoundary } from './routes/routeBoundaries'
 import { useAppRoute } from './routes/useAppRoute'
 import './App.css'
+import './auth.css'
 
 type AccountGateProps = {
   onNavigate: (path: string) => void
@@ -36,20 +33,32 @@ function AccountGate({ onNavigate }: AccountGateProps) {
 
   if (state === 'checking') return <section className="page" role="status">계정 접근 권한을 확인하는 중…</section>
   if (state === 'error') return <section className="page"><h1 className="card-title">계정 확인 오류</h1><p className="page-description">계정 접근 권한을 확인하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도하세요.</p></section>
-  return <AccountPage onNavigate={onNavigate} onLoggedOut={() => onNavigate('/login')} />
+  return <lazyRoutePages.account onNavigate={onNavigate} onLoggedOut={() => onNavigate('/login')} />
 }
 
 function App() {
   const { route, navigate } = useAppRoute()
 
-  if (route.name === 'landing') return <LandingPage onNavigate={navigate} />
-  if (route.name === 'login') return <LoginPage onNavigate={navigate} onAuthenticated={() => navigate('/account')} />
+  if (route.name === 'landing') {
+    return (
+      <RouteBoundary routeName={route.name}>
+        <lazyRoutePages.landing onNavigate={navigate} />
+      </RouteBoundary>
+    )
+  }
+  if (route.name === 'login') {
+    return (
+      <RouteBoundary routeName={route.name}>
+        <lazyRoutePages.login onNavigate={navigate} onAuthenticated={() => navigate('/account')} />
+      </RouteBoundary>
+    )
+  }
 
   const content = (() => {
     switch (route.name) {
       case 'reader':
         return (
-          <ReaderPage
+          <lazyRoutePages.reader
             key={route.documentId}
             documentId={route.documentId}
             onBackToLibrary={() => navigate('/library')}
@@ -57,17 +66,17 @@ function App() {
           />
         )
       case 'settings':
-        return <SettingsPage />
+        return <lazyRoutePages.settings />
       case 'account':
         return <AccountGate onNavigate={navigate} />
       case 'library':
-        return <LibraryPage onNavigate={navigate} />
+        return <lazyRoutePages.library onNavigate={navigate} />
     }
   })()
 
   return (
     <AppShell currentRoute={route.name} onNavigate={navigate}>
-      {content}
+      <RouteBoundary routeName={route.name}>{content}</RouteBoundary>
     </AppShell>
   )
 }
