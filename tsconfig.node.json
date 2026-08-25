@@ -4,6 +4,8 @@
     "target": "es2023",
     "lib": ["ES2023"],
     "types": ["node"],
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -16,6 +18,7 @@
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "noImplicitReturns": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },

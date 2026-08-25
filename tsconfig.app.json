@@ -5,6 +5,8 @@
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
     "types": ["vite/client"],
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
@@ -19,6 +21,7 @@
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "noImplicitReturns": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
