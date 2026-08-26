@@ -38,6 +38,8 @@ describe('reader accessibility semantics', () => {
     }))
 
     expect(toolbarMarkup).toContain('<h1 class="visually-hidden">PDF 리더: fixture-reader</h1>')
+    expect(toolbarMarkup).toContain('<div class="reader-toolbar" role="toolbar"')
+    expect(toolbarMarkup).not.toContain('<header class="reader-toolbar"')
     expect(toolbarMarkup).toContain('class="reader-controls" role="group"')
     expect(toolbarMarkup).toContain('aria-label="PDF 쪽과 확대/축소 조절"')
     expect(fixtureMarkup).toContain('class="pdf-page-surface reader-fixture-surface" role="document"')

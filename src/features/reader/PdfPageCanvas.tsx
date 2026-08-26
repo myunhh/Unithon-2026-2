@@ -188,6 +188,7 @@ export function ReaderFixturePage({ pageNumber, page, zoom, rotation, isKeyboard
         <div className="reader-fixture-sheet" aria-hidden="true">
           <span className="reader-fixture-rule reader-fixture-rule--wide" />
           <span className="reader-fixture-rule reader-fixture-rule--medium" />
+          {pageNumber === 1 ? <span className="reader-fixture-selection" /> : null}
           <span className="reader-fixture-rule reader-fixture-rule--short" />
           <span className="reader-fixture-rule reader-fixture-rule--wide" />
           <span className="reader-fixture-rule reader-fixture-rule--medium" />

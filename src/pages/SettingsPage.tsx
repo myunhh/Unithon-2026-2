@@ -87,10 +87,10 @@ export function SettingsPage() {
   }
 
   return (
-    <section className="page settings-page" aria-labelledby="settings-title">
+    <section className="page settings-page" aria-label="설정">
       <PageHeader title="설정" description="연결 상태와 제공자 설정을 확인합니다. 이 화면의 동작은 데모 상태만 변경합니다." />
       <div className="settings-demo-banner" role="note">
-        <strong id="settings-title">Provider settings demo</strong>
+        <strong id="settings-demo-title">제공자 설정 데모</strong>
         <span>BE-070 연결 전 UI 검증용입니다. 인증 정보 입력, 저장, 네트워크 요청은 구현하지 않았습니다.</span>
       </div>
       {notice ? <Alert tone={notice.tone} className="settings-notice">{notice.text}</Alert> : null}

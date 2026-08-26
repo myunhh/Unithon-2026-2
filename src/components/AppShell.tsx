@@ -40,7 +40,8 @@ export function AppShell({ children, currentRoute, onNavigate }: AppShellProps) 
     <div className="app-shell">
       <aside className="sidebar" aria-label="주요 메뉴">
         <AppLink className="brand" href="/library" onNavigate={onNavigate}>
-          PaperBridge
+          <span className="brand-name">PaperBridge</span>
+          <span className="brand-description">논문 리더</span>
         </AppLink>
         <nav className="sidebar-nav">
           <Navigation currentRoute={currentRoute} onNavigate={onNavigate} />
@@ -52,7 +53,8 @@ export function AppShell({ children, currentRoute, onNavigate }: AppShellProps) 
 
       <header className="mobile-header">
         <AppLink className="brand" href="/library" onNavigate={onNavigate}>
-          PaperBridge
+          <span className="brand-name">PaperBridge</span>
+          <span className="brand-description">논문 리더</span>
         </AppLink>
         <nav className="mobile-nav" aria-label="주요 메뉴">
           <Navigation currentRoute={currentRoute} onNavigate={onNavigate} />

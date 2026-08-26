@@ -13,6 +13,7 @@ import { READER_PANELS } from './reader-state'
 
 const parseLabels = { queued: '파싱 대기', extracting: '원문 확인 중', ready: '준비 완료', error: '확인 필요' } as const
 const fileLabels = { loading: '파일 불러오는 중', ready: '파일 준비 완료', error: '파일 확인 필요' } as const
+const jobStepLabels = ['파일 확인', '원문 추출', '페이지 정리', '리더 준비'] as const
 
 function formatDate(timestamp: string): string {
   const date = new Date(timestamp)
@@ -39,6 +40,13 @@ export type ReaderSidePanelProps = {
 export function ReaderSidePanel({ panel, fileStatus, parseStatus, graph, selection, run, highlights, providerStatus, onPanelChange, onOpenSettings, onCancelRun, onRetryRun, onDeleteHighlight, onMoveToHighlight }: ReaderSidePanelProps) {
   const scannedPageCount = graph?.pages.filter((page) => page.textItems.length === 0).length ?? 0
   const blockCount = graph?.pages.reduce((total, page) => total + page.blocks.length, 0) ?? 0
+  const ready = fileStatus === 'ready' && parseStatus === 'ready'
+  const jobStepStates = [
+    fileStatus === 'ready' ? 'ready' : fileStatus === 'error' ? 'error' : 'working',
+    parseStatus === 'ready' ? 'ready' : parseStatus === 'error' ? 'error' : parseStatus === 'extracting' ? 'working' : 'pending',
+    ready ? 'ready' : 'pending',
+    ready ? 'ready' : 'pending',
+  ] as const
   const retryTask = run.task
   const handlePanelTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: ReaderPanel) => {
     const currentIndex = READER_PANELS.indexOf(tab)
@@ -54,13 +62,23 @@ export function ReaderSidePanel({ panel, fileStatus, parseStatus, graph, selecti
     document.getElementById(`reader-tab-${nextPanel}`)?.focus()
   }
   return (
-    <Card as="aside" className="reader-sidepanel" aria-label="리더 세부 정보">
+    <Card as="section" className="reader-sidepanel" aria-label="리더 세부 정보">
       <div className="reader-panel-tabs" role="tablist" aria-label="리더 보조 패널">
-        {READER_PANELS.map((tab) => <button className="reader-panel-tab" id={`reader-tab-${tab}`} key={tab} type="button" role="tab" tabIndex={panel === tab ? 0 : -1} aria-selected={panel === tab} aria-controls={`reader-panel-${tab}`} onClick={() => onPanelChange(tab)} onKeyDown={(event) => handlePanelTabKeyDown(event, tab)}>{tab === 'info' ? '문서 정보' : tab === 'chat' ? 'AI 작업' : `하이라이트 (${highlights.length})`}</button>)}
+        {READER_PANELS.map((tab) => <button className="reader-panel-tab" id={`reader-tab-${tab}`} key={tab} type="button" role="tab" tabIndex={panel === tab ? 0 : -1} aria-selected={panel === tab} aria-controls={`reader-panel-${tab}`} onClick={() => onPanelChange(tab)} onKeyDown={(event) => handlePanelTabKeyDown(event, tab)}>{tab === 'info' ? '정보' : tab === 'chat' ? 'Chat' : '하이라이트'}</button>)}
       </div>
 
       {panel === 'info' ? <div id="reader-panel-info" role="tabpanel" aria-labelledby="reader-tab-info" className="reader-panel-content">
-        <div><p className="section-label">독립 상태</p><h2 className="card-title">원문 정보</h2></div>
+        <div><p className="section-label">문서 상태</p><h2 className="card-title">원문 정보</h2></div>
+        <section className="reader-job-card" aria-labelledby="reader-job-title">
+          <div className="reader-job-heading"><h3 id="reader-job-title">페이지 변환</h3><StatusBadge tone={ready ? 'ready' : parseStatus === 'error' ? 'error' : 'working'}>{ready ? '완료' : parseLabels[parseStatus]}</StatusBadge></div>
+          <ol className="reader-job-steps">
+            {jobStepLabels.map((label, index) => {
+              const stepState = jobStepStates[index]
+              const status = stepState === 'ready' ? '완료' : stepState === 'working' ? '진행 중' : stepState === 'error' ? '오류' : '대기'
+              return <li key={label} data-state={stepState}><span className="reader-job-step-number">{index + 1}</span><span>{label}</span><StatusBadge tone={stepState === 'ready' ? 'ready' : stepState === 'error' ? 'error' : stepState === 'working' ? 'working' : 'warning'}>{status}</StatusBadge></li>
+            })}
+          </ol>
+        </section>
         <dl className="detail-list">
           <div><dt>파일</dt><dd>{fileLabels[fileStatus]}</dd></div>
           <div><dt>파싱</dt><dd>{parseLabels[parseStatus]}</dd></div>
@@ -73,12 +91,12 @@ export function ReaderSidePanel({ panel, fileStatus, parseStatus, graph, selecti
       </div> : null}
 
       {panel === 'chat' ? <div id="reader-panel-chat" role="tabpanel" aria-labelledby="reader-tab-chat" className="reader-panel-content">
-        <div><p className="section-label">AI 실행 환경</p><h2 className="card-title">선택한 문장 작업</h2><p className="card-description">원문 위치를 근거로 설명하거나 번역합니다.</p></div>
+        <div><p className="section-label">선택 작업</p><h2 className="card-title">원문에서 이어가기</h2><p className="card-description">선택한 문장을 근거로 설명하거나 번역합니다.</p></div>
         {providerStatus?.openRouter.configured ? <p className="agent-provider-state"><StatusBadge tone="ready">연결됨</StatusBadge><span>OpenRouter · {providerStatus.openRouter.modelId}</span></p> : null}
         {run.status === 'error' && run.error ? <Alert tone="error"><span>{run.error}</span><AppLink className="button button--secondary" href="/settings" onNavigate={onOpenSettings}>설정 열기</AppLink></Alert> : null}
         {run.status === 'checking-provider' ? <Alert tone="info"><span>제공자 상태를 확인하고 실행을 준비하는 중입니다.</span><Button variant="secondary" onClick={onCancelRun}>취소</Button></Alert> : null}
         {run.status === 'cancelled' ? <Alert tone="warning">AI 실행을 취소했습니다. 같은 선택 영역에서 다시 실행할 수 있습니다.</Alert> : null}
-        {selection ? <div className="agent-selection-card"><span className="section-label">{selection.pageNumber}쪽 선택 영역</span><p className="reader-selection-context">{selection.selectedText || '선택한 영역'}</p>{run.status === 'idle' ? <p className="agent-next-step">위 툴바에서 설명 또는 번역을 시작하세요.</p> : null}</div> : <EmptyRow>원문 텍스트를 선택하면 설명과 번역을 실행할 수 있습니다.</EmptyRow>}
+        {selection ? <div className="agent-selection-card"><span className="section-label">{selection.pageNumber}쪽 선택 영역</span><p className="reader-selection-context">{selection.selectedText || '선택한 영역'}</p>{run.status === 'idle' ? <p className="agent-next-step">선택 도구에서 작업을 시작하세요.</p> : null}</div> : <EmptyRow>원문 텍스트를 선택하면 설명과 번역을 실행할 수 있습니다.</EmptyRow>}
         {run.task && (run.status === 'running' || run.status === 'completed') ? <section className="agent-result" aria-live="polite" aria-busy={run.status === 'running'}><div className="agent-result-heading"><div><span className="section-label">{run.task === 'explain' ? '설명 결과' : '번역 결과'}</span><strong>{run.status === 'running' ? '생성 중…' : '완료'}</strong></div>{run.status === 'running' ? <Button variant="secondary" onClick={onCancelRun}>실행 취소</Button> : null}</div><p className="agent-result-text">{run.text || '응답을 기다리는 중…'}</p></section> : null}
         {retryTask && run.status === 'error' ? <div className="agent-retry-row"><span className="settings-inline-copy">문제 해결 후 같은 선택 영역에서 다시 실행하세요.</span><Button variant="secondary" onClick={() => onRetryRun(retryTask)}>다시 실행</Button></div> : null}
       </div> : null}

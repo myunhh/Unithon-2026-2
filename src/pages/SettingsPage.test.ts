@@ -7,6 +7,8 @@ describe('SettingsPage provider availability semantics', () => {
   it('uses a labelled, stacked list instead of a clipped data table', () => {
     const markup = renderToStaticMarkup(createElement(SettingsPage))
 
+    expect(markup).toContain('<section class="page settings-page" aria-label="설정">')
+    expect(markup).toContain('<strong id="settings-demo-title">제공자 설정 데모</strong>')
     expect(markup).toContain('<div class="settings-summary" role="group" aria-label="제공자 환경 요약">')
     expect(markup).toContain('<ul class="settings-cli-list" aria-label="제공자 연결 상태">')
     expect(markup).toContain('<h2 class="settings-cli-provider-name">Claude Code</h2>')

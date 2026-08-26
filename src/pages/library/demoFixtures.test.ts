@@ -13,7 +13,7 @@ describe('library cursor demo seam', () => {
     const page = getDemoPage(state.pageIndex)
 
     expect(page.pageNumber).toBe(1)
-    expect(page.items).toHaveLength(3)
+    expect(page.items).toHaveLength(5)
     expect(page.hasNextPage).toBe(true)
   })
 

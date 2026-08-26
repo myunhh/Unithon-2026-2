@@ -332,16 +332,16 @@ export function ReaderPage({ documentId, onBackToLibrary, onOpenSettings }: Read
   }
 
   if (state.file.status === 'loading' || state.parse.status === 'queued' || state.parse.status === 'extracting') {
-    return <section className="reader-page"><Card className="reader-state" role="status" aria-live="polite"><StatusBadge tone="working">준비 중</StatusBadge><h1 className="card-title">비공개 PDF 준비 중</h1><p className="card-description">PaperBridge가 선택한 원문을 읽을 수 있도록 파일과 파싱 상태를 준비하고 있습니다.</p></Card></section>
+    return <section className="reader-page reader-page--state"><Card className="reader-state" role="status" aria-live="polite"><StatusBadge tone="working">진행 중</StatusBadge><h1 className="card-title">비공개 PDF 준비 중</h1><p className="card-description">PaperBridge가 선택한 원문을 읽을 수 있도록 파일과 파싱 상태를 준비하고 있습니다.</p></Card></section>
   }
 
   if (state.file.status === 'error' || !graph || state.parse.status === 'error') {
-    return <section className="reader-page"><Card className="reader-state" aria-labelledby="reader-error-title"><StatusBadge tone="error">문서를 사용할 수 없음</StatusBadge><h1 className="card-title" id="reader-error-title">PaperBridge가 이 PDF를 열지 못했습니다</h1><Alert tone="error">{state.file.error ?? state.parse.error ?? 'PDF를 불러오는 세션이 예기치 않게 끝났습니다.'}</Alert><div className="inline-actions"><Button onClick={onBackToLibrary}>문서 보관함으로 돌아가기</Button></div></Card></section>
+    return <section className="reader-page reader-page--state"><Card className="reader-state" aria-labelledby="reader-error-title"><StatusBadge tone="error">오류</StatusBadge><h1 className="card-title" id="reader-error-title">PaperBridge가 이 PDF를 열지 못했습니다</h1><Alert tone="error">{state.file.error ?? state.parse.error ?? 'PDF를 불러오는 세션이 예기치 않게 끝났습니다.'}</Alert><div className="inline-actions"><Button onClick={onBackToLibrary}>문서 보관함으로 돌아가기</Button></div></Card></section>
   }
 
   return (
-    <section className="reader-page" aria-label="PaperBridge PDF 리더" onKeyDownCapture={handleReaderKeyDown}>
-      <div className="reader-workspace">
+    <section className="reader-page" aria-label="PaperBridge PDF 리더" data-reader-mode={fixture ? 'fixture' : 'pdf'} onKeyDownCapture={handleReaderKeyDown}>
+      <div className="reader-workspace" role="region" aria-label="PDF 읽기 작업 공간">
         <ReaderToolbar
           documentId={documentId}
           pageCount={pageCount}
@@ -357,7 +357,7 @@ export function ReaderPage({ documentId, onBackToLibrary, onOpenSettings }: Read
           onZoomChange={(zoom) => dispatch({ type: 'viewport/zoom', zoom })}
           onToggleAllPages={() => dispatch({ type: 'viewport/toggle-all' })}
         />
-        <div className="reader-canvas" ref={viewerRef} onPointerDown={() => { pointerSelectingRef.current = true }} onMouseUp={() => window.setTimeout(finalizeReaderSelection, 0)} onKeyUp={handleReaderKeyUp}>
+        <div className="reader-canvas" ref={viewerRef} role="region" aria-label="PDF 문서" onPointerDown={() => { pointerSelectingRef.current = true }} onMouseUp={() => window.setTimeout(finalizeReaderSelection, 0)} onKeyUp={handleReaderKeyUp}>
           {state.highlightError ? <Alert tone="error">{state.highlightError} PaperBridge 연결을 확인한 뒤 하이라이트를 다시 시도하세요.</Alert> : null}
           {scannedPageCount > 0 && !fixture ? <Alert tone="warning">텍스트 레이어가 없는 쪽 {scannedPageCount}개: 스캔 쪽도 원문으로 읽을 수 있지만 텍스트가 있는 쪽만 선택할 수 있습니다.</Alert> : null}
           {visiblePages.map((pageNumber) => {
