@@ -74,6 +74,35 @@ marked “sample pending” are centralized so a later exact Figma sample is one
   later Figma node proves one.
 - Numbers, times, pages, step numbers, and IDs use tabular numerals.
 
+### 3.1 Token binding and provenance
+
+The CSS scale is centralized in `src/index.css` and consumed by every route
+stylesheet. Values in this table are implementation-preserving bindings sampled
+from the FEFIGMA reference implementation; they are not new claims about exact
+Figma node measurements.
+
+| Scale | Bound tokens | Implementation value | Figma provenance |
+| --- | --- | --- | --- |
+| Spacing | `--space-0` … `--space-14` | 0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 64px | 4px cadence and 8/16/20/32px landmarks are supported by the readable board captures; intermediate values and exact child-node spacing are `OPEN`. |
+| Semantic spacing | `--space-panel`, `--space-card`, `--space-page`, `--space-reader-section`, `--space-state-mark-offset` | 16, 20, 32, 14, 5px | Implementation aliases and one-off geometry; direct Figma child-node mapping is `OPEN` except the landmarks above. |
+| Type size | `--font-size-2xs` … `--font-size-6xl` | 10, 11, 12, 13, 14, 15, 16, 18, 20, 28, 32, 40px | 12/14/16/28px hierarchy is documented from the measured system; exact Figma family/metrics and auxiliary sizes are `OPEN`. |
+| Fluid type | `--font-size-display-fluid`, `--font-size-heading-fluid`, `--font-size-login-fluid` | Existing `clamp()` expressions, unchanged | Responsive implementation binding; Figma 375/768 variants are `OPEN`. |
+| Leading | `--line-height-none`, `--line-height-body`, `--line-height-display`, `--line-height-2xs` … `--line-height-4xl` | Existing 1, 1.5, 1.16, 14/15/16/18/19/20/22/24/26/28/36px values | CJK-safe implementation values; exact Figma font metrics are `OPEN`. |
+| Weight | `--font-weight-regular`, `--font-weight-medium`, `--font-weight-semibold`, `--font-weight-bold` | 400/500/600/700 | Figma weight metadata is `OPEN`; values preserve current rendered hierarchy. |
+| Tracking | `--letter-spacing-tightest`, `--letter-spacing-tight`, `--letter-spacing-heading`, `--letter-spacing-subtle`, `--letter-spacing-caps` | Existing `-0.035em`, `-0.025em`, `-0.02em`, `-0.01em`, `0.04em` values | Implementation bindings; exact Figma tracking is `OPEN`. |
+| Radius | `--radius-xs`, `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`, `--radius-full` | 2/4/6/8/12px and 50% | 6/8/12px restrained rounding is supported by the board; exact child-node radii are `OPEN`. |
+| Border | `--border-width-none`, `--border-width-hairline`, `--border-width-strong`, `--border-width-accent` | 0/1/2/3px | One-pixel boundaries are supported by the board; exact emphasis widths are `OPEN`. |
+| Interaction size | `--interaction-size-touch`, `--interaction-size-compact`, `--interaction-size-small`, `--interaction-size-badge` | 44/36/32/24px | 44px touch target is an implementation/accessibility contract; exact Figma target metadata is `OPEN`. |
+| Shell/Reader control geometry | `--shell-mobile-brand-height`, `--reader-toolbar-height`, `--reader-selection-toolbar-height`, `--reader-selection-action-height`, `--reader-selection-action-padding-inline`, `--reader-numeric-display-width`, `--reader-job-step-height`, `--reader-job-marker-size` | Existing 56/52/48/34/9/40/28/20px values | Shared implementation control dimensions; exact Figma child-node measurements are `OPEN`. |
+| Motion | `--motion-duration-reduced`, `--motion-duration-fast`, `--motion-ease-standard`, `--motion-press-offset`, `--motion-transition-control` | Existing 0.01ms reduced-motion, 120ms ease, 1px press and control transition values | Motion metadata is not readable in the current board captures and remains `OPEN`; reduced-motion behavior is an explicit product accessibility contract. |
+| Reader selection | `--color-selection-toolbar-border`, `--color-selection-toolbar-hover` | Existing `rgba(255, 255, 255, 0.28)` and `rgba(255, 255, 255, 0.12)` | Implementation-preserving toolbar state colors; Figma exact alpha values are `OPEN`. |
+| Focus/state offsets | `--focus-outline-offset`, `--space-state-mark-offset` | Existing 3px focus outline offset and 5px landing state-marker offset | Implementation-preserving one-off geometry; exact Figma focus/state-marker offsets are `OPEN`. |
+
+Raw layout geometry such as table/content columns, truncation bounds, percentage
+fixture dimensions, viewport heights, and media breakpoints remains local where
+it is not a shared design-system scale. No token value above should be treated as an exact Figma
+measurement until a fresh node inspection or sampled capture is added here.
+
 ## 4. Desktop composition
 
 The readable Figma frames use a 1440-class application viewport:
