@@ -145,6 +145,8 @@ describe('PaperBridge provider API', () => {
     })
     try {
       const cookie = cookieFrom(await fetch(`${server.origin}/api/health`))
+      const unconfigured = await fetch(`${server.origin}/api/providers`, { headers: { cookie } })
+      expect(await unconfigured.json()).toEqual({ storageConfigured: true, openRouter: { configured: false } })
       const noSavedCredential = await fetch(`${server.origin}/api/providers/openrouter/runs`, {
         method: 'POST', headers: jsonHeaders(cookie), body: JSON.stringify(runInput),
       })

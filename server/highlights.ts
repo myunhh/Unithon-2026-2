@@ -265,3 +265,30 @@ export function createHighlightStore(environment: ServerEnv, sessionId: string, 
   const client = createServerSupabaseClient(environment)
   return client ? new HighlightRepository(createSupabaseGateway(client, highlightStateIdForSession(sessionId, documentId)), documentId) : null
 }
+
+export function createInMemoryHighlightStoreFactory(): (sessionId: string, documentId: string) => HighlightStore {
+  const records = new Map<string, HighlightStateSnapshot>()
+  const stores = new Map<string, HighlightStore>()
+  return (sessionId, documentId) => {
+    const stateId = highlightStateIdForSession(sessionId, documentId)
+    const existing = stores.get(stateId)
+    if (existing) return existing
+    const gateway: HighlightStateGateway = {
+      async read() {
+        const record = records.get(stateId) ?? { revision: 0, state: emptyState() }
+        return { revision: record.revision, state: { version: 1, highlights: [...record.state.highlights] } }
+      },
+      async write(expectedRevision, state) {
+        const current = records.get(stateId)
+        const revision = current?.revision ?? 0
+        if (revision !== expectedRevision) return { saved: false }
+        const nextRevision = revision + 1
+        records.set(stateId, { revision: nextRevision, state: { version: 1, highlights: [...state.highlights] } })
+        return { saved: true, revision: nextRevision }
+      },
+    }
+    const store = new HighlightRepository(gateway, documentId)
+    stores.set(stateId, store)
+    return store
+  }
+}

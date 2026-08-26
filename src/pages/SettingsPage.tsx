@@ -13,6 +13,8 @@ import {
 } from './settings/providerFixtures'
 import './SettingsPage.css'
 
+export { LiveSettingsPage as SettingsPage } from './settings/LiveSettingsPage'
+
 type Notice = { tone: 'info' | 'success' | 'warning'; text: string }
 
 const statusLabels = {
@@ -31,7 +33,7 @@ const statusTones = {
   reconnect_required: 'warning',
 } satisfies Record<DemoProviderStatus, 'ready' | 'working' | 'warning' | 'error'>
 
-export function SettingsPage() {
+export function SettingsPageDemoArchive() {
   const [providers, setProviders] = useState<readonly DemoProvider[]>(DEMO_PROVIDER_FIXTURE)
   const [notice, setNotice] = useState<Notice>({
     tone: 'info',

@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "concurrently -k --names web,api \"npm:dev:web\" \"npm:dev:api\"",
-    "dev:web": "vite",
+    "dev:web": "cross-env VITE_PUBLIC_API_URL=/api vite --host 127.0.0.1",
     "dev:api": "tsx watch server/index.ts",
     "dev:desktop": "concurrently -k --names services,desktop \"npm:dev\" \"npm:desktop\"",
     "desktop": "npm run build:electron && wait-on http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron dist-electron/electron/main.js",
@@ -41,6 +41,7 @@
     "cross-env": "^10.1.0",
     "electron": "^44.0.0",
     "oxlint": "^1.79.0",
+    "playwright-core": "^1.62.1",
     "react-grab": "^0.2.0",
     "react-scan": "^0.5.7",
     "tsx": "^4.23.12",

@@ -67,6 +67,42 @@ export interface DocumentStore {
   getFile(id: string): Promise<DocumentFile | null>
 }
 
+export class InMemoryDocumentStore implements DocumentStore {
+  readonly #documents = new Map<string, LibraryDocument>()
+  readonly #files = new Map<string, DocumentFile>()
+
+  constructor(private readonly maxPdfBytes = MAX_PDF_BYTES) {}
+
+  async list(): Promise<LibraryDocument[]> {
+    return [...this.#documents.values()].sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+  }
+
+  async upload(input: UploadInput): Promise<LibraryDocument> {
+    const pageCount = input.verifiedPageCount ?? await validatePdfUpload(input, this.maxPdfBytes)
+    const timestamp = new Date().toISOString()
+    const id = randomUUID()
+    const originalFileName = sanitizeFileName(input.originalFileName)
+    const document: LibraryDocument = {
+      id,
+      title: titleFromUpload(input.title, originalFileName),
+      originalFileName,
+      sizeBytes: input.bytes.byteLength,
+      pageCount,
+      parseState: 'ready',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }
+    this.#documents.set(id, document)
+    this.#files.set(id, { bytes: Uint8Array.from(input.bytes), originalFileName })
+    return document
+  }
+
+  async getFile(id: string): Promise<DocumentFile | null> {
+    const file = this.#files.get(id)
+    return file ? { bytes: Uint8Array.from(file.bytes), originalFileName: file.originalFileName } : null
+  }
+}
+
 export class DocumentValidationError extends Error {
   constructor(message: string) {
     super(message)

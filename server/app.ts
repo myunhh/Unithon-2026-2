@@ -778,21 +778,21 @@ async function handleRequest(
       return
     }
     const state = await repository.load(session.id)
-    writeJson(response, 200, { storageConfigured: true, ...state })
+    writeJson(response, 200, { storageConfigured: true, openRouter: state.openRouter ?? { configured: false } })
     return
   }
 
   if (request.method === 'PUT' && url.pathname === '/api/providers/openrouter') {
     const input = providerSaveInput(await parseJsonBody<unknown>(request, MAX_PROVIDER_JSON_BYTES))
     const state = await requiredProviderRepository(providerRepository()).saveOpenRouter(session.id, input)
-    writeJson(response, 200, { openRouter: state.openRouter })
+    writeJson(response, 200, { openRouter: state.openRouter ?? { configured: false } })
     return
   }
 
   if (request.method === 'DELETE' && url.pathname === '/api/providers/openrouter') {
     request.resume()
     const state = await requiredProviderRepository(providerRepository()).clearOpenRouter(session.id)
-    writeJson(response, 200, { openRouter: state.openRouter })
+    writeJson(response, 200, { openRouter: state.openRouter ?? { configured: false } })
     return
   }
 

@@ -56,6 +56,26 @@ export function createProviderRepositoryFactory(
   return () => new ProviderStateRepository({ gateway, cipher })
 }
 
+export function createInMemoryProviderRepositoryFactory(environment: ServerEnv): ProviderRepositoryFactory {
+  if (!environment.providerEncryptionKey) return () => null
+  const records = new Map<string, OptimisticStateRecord>()
+  const gateway: OptimisticStateGateway = {
+    async read(stateId) {
+      return records.get(stateId) ?? null
+    },
+    async compareAndSet(stateId, expectedRevision, value) {
+      const current = records.get(stateId)
+      if ((current?.revision ?? null) !== expectedRevision) return null
+      const revision = String(current ? Number(current.revision) + 1 : 1)
+      const record = { revision, value }
+      records.set(stateId, record)
+      return record
+    },
+  }
+  const cipher = new ProviderCredentialCipher(environment.providerEncryptionKey)
+  return () => new ProviderStateRepository({ gateway, cipher })
+}
+
 function validRevision(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }

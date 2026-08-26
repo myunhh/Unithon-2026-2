@@ -68,7 +68,7 @@
   border-radius: var(--radius-md);
   background: var(--color-background);
   color: var(--color-text-muted);
-  cursor: not-allowed;
+  cursor: pointer;
 }
 
 .library-file-dropzone[aria-disabled='true'] { opacity: 0.8; }
@@ -216,6 +216,20 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.library-document-link {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.library-document-link:hover { text-decoration: underline; }
+.library-document-link:focus-visible { outline: var(--border-width-strong) solid var(--color-text); outline-offset: var(--space-1); }
 
 .library-document-number,
 .library-document-date {

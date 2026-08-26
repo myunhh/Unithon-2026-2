@@ -131,6 +131,18 @@
 
 .settings-provider-actions .button { min-width: 0; flex: 1 1 160px; }
 
+.settings-provider-form {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.settings-provider-form label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .settings-test-result {
   margin: 0;
   padding: var(--space-lg);

@@ -1,4 +1,5 @@
 import type { User } from '@supabase/supabase-js'
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { ServerEnv } from './env.js'
 import { createServerSupabaseClient } from './supabase.js'
@@ -185,6 +186,78 @@ export function createSupabaseAuthService(environment: ServerEnv): AuthService |
       } catch {
         // Logout is intentionally best effort. Cookies are always cleared.
       }
+    },
+  }
+}
+
+export function createDevelopmentAuthService(): AuthService {
+  type StoredUser = { user: AuthenticatedUser; salt: Buffer; passwordHash: Buffer }
+  const usersByEmail = new Map<string, StoredUser>()
+  const usersById = new Map<string, StoredUser>()
+  const accessTokens = new Map<string, string>()
+  const refreshTokens = new Map<string, string>()
+
+  const issueSession = (stored: StoredUser): AuthSession => {
+    const accessToken = randomBytes(32).toString('base64url')
+    const refreshToken = randomBytes(32).toString('base64url')
+    accessTokens.set(accessToken, stored.user.id)
+    refreshTokens.set(refreshToken, stored.user.id)
+    return { user: stored.user, tokens: { accessToken, refreshToken } }
+  }
+
+  const replaceUser = (stored: StoredUser, user: AuthenticatedUser): StoredUser => {
+    const next = { ...stored, user }
+    usersByEmail.set(user.email.toLowerCase(), next)
+    usersById.set(user.id, next)
+    return next
+  }
+
+  return {
+    async signUp(email, password) {
+      const normalizedEmail = email.toLowerCase()
+      if (usersByEmail.has(normalizedEmail)) return null
+      const salt = randomBytes(16)
+      const timestamp = new Date().toISOString()
+      const stored: StoredUser = {
+        user: { id: randomUUID(), email: normalizedEmail, createdAt: timestamp, lastSignInAt: timestamp },
+        salt,
+        passwordHash: scryptSync(password, salt, 32),
+      }
+      usersByEmail.set(normalizedEmail, stored)
+      usersById.set(stored.user.id, stored)
+      const session = issueSession(stored)
+      return { user: stored.user, tokens: session.tokens, emailConfirmationRequired: false }
+    },
+    async signIn(email, password) {
+      const stored = usersByEmail.get(email.toLowerCase())
+      if (!stored || !timingSafeEqual(stored.passwordHash, scryptSync(password, stored.salt, 32))) return null
+      const current = replaceUser(stored, { ...stored.user, lastSignInAt: new Date().toISOString() })
+      return issueSession(current)
+    },
+    async getUser(accessToken) {
+      const userId = accessTokens.get(accessToken)
+      return userId ? usersById.get(userId)?.user ?? null : null
+    },
+    async refresh(refreshToken) {
+      const userId = refreshTokens.get(refreshToken)
+      if (!userId) return null
+      refreshTokens.delete(refreshToken)
+      const stored = usersById.get(userId)
+      return stored ? issueSession(stored) : null
+    },
+    async updatePassword(userId, password) {
+      const stored = usersById.get(userId)
+      if (!stored) return false
+      const salt = randomBytes(16)
+      replaceUser(stored, { ...stored.user })
+      const next = { ...stored, salt, passwordHash: scryptSync(password, salt, 32) }
+      usersByEmail.set(stored.user.email.toLowerCase(), next)
+      usersById.set(userId, next)
+      return true
+    },
+    async revoke(userId) {
+      for (const [token, tokenUserId] of accessTokens) if (tokenUserId === userId) accessTokens.delete(token)
+      for (const [token, tokenUserId] of refreshTokens) if (tokenUserId === userId) refreshTokens.delete(token)
     },
   }
 }

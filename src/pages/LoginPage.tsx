@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { AppLink } from '../routes/AppLink'
-import { runLoginDemo, type DemoOutcome } from './login/demoFixture'
+import { authClient } from '../domain/auth'
 import {
   firstInvalidLoginField,
   modeForKeyboardKey,
@@ -23,11 +23,7 @@ type Notice = Readonly<{
   readonly retryable: boolean
 }>
 
-function assertNever(value: never): never {
-  throw new Error(`Unexpected login demo outcome: ${String(value)}`)
-}
-
-export function LoginPage({ onNavigate }: LoginPageProps) {
+export function LoginPage({ onNavigate, onAuthenticated }: LoginPageProps) {
   const [mode, setMode] = useState<LoginMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,7 +32,6 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const [errors, setErrors] = useState<LoginErrors>({})
   const [notice, setNotice] = useState<Notice | null>(null)
   const [pending, setPending] = useState(false)
-  const [attempt, setAttempt] = useState(0)
   const [lastValidDraft, setLastValidDraft] = useState<LoginDraft | null>(null)
   const runId = useRef(0)
   const noticeRef = useRef<HTMLParagraphElement>(null)
@@ -66,7 +61,6 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     setPasswordVisible(false)
     setErrors({})
     setNotice(null)
-    setAttempt(0)
     setLastValidDraft(null)
     setPending(false)
     tabRefs[nextMode].current?.focus()
@@ -79,29 +73,37 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     switchMode(nextMode)
   }
 
-  async function completeDemo(nextMode: LoginMode, nextAttempt: number): Promise<void> {
+  async function completeAuthentication(nextMode: LoginMode, draft: LoginDraft): Promise<void> {
     const currentRun = runId.current + 1
     runId.current = currentRun
     setPending(true)
     setNotice(null)
-    await Promise.resolve()
-    if (runId.current !== currentRun) return
-
-    const outcome = runLoginDemo({ mode: nextMode, attempt: nextAttempt })
-    setPending(false)
-    handleDemoOutcome(outcome)
-  }
-
-  function handleDemoOutcome(outcome: DemoOutcome): void {
-    switch (outcome.kind) {
-      case 'retryable_error':
-        setNotice({ tone: 'error', message: outcome.message, retryable: true })
+    try {
+      if (nextMode === 'login') {
+        await authClient.login({ email: draft.email, password: draft.password })
+        if (runId.current === currentRun) onAuthenticated()
         return
-      case 'success':
-        setNotice({ tone: 'success', message: outcome.message, retryable: false })
-        return
-      default:
-        return assertNever(outcome)
+      }
+
+      const result = await authClient.signup({ email: draft.email, password: draft.password })
+      if (runId.current !== currentRun) return
+      if (result.emailConfirmationRequired) {
+        setNotice({ tone: 'success', message: '가입되었습니다. 이메일 확인을 마친 뒤 로그인하세요.', retryable: false })
+      } else {
+        onAuthenticated()
+      }
+    } catch {
+      if (runId.current === currentRun) {
+        setNotice({
+          tone: 'error',
+          message: nextMode === 'login'
+            ? '로그인하지 못했습니다. 계정 정보와 서버 연결을 확인하세요.'
+            : '가입하지 못했습니다. 입력값과 서버 설정을 확인하세요.',
+          retryable: true,
+        })
+      }
+    } finally {
+      if (runId.current === currentRun) setPending(false)
     }
   }
 
@@ -115,10 +117,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       return
     }
 
-    const nextAttempt = attempt + 1
-    setAttempt(nextAttempt)
     setLastValidDraft(draft)
-    void completeDemo(mode, nextAttempt)
+    void completeAuthentication(mode, draft)
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
@@ -127,11 +127,9 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     submitDraft({ email, password, confirmation })
   }
 
-  function retryDemo(): void {
+  function retryAuthentication(): void {
     if (!lastValidDraft || pending) return
-    const nextAttempt = attempt + 1
-    setAttempt(nextAttempt)
-    void completeDemo(mode, nextAttempt)
+    void completeAuthentication(mode, lastValidDraft)
   }
 
   const emailDescription = errors.email ? 'login-email-help login-email-error' : 'login-email-help'
@@ -141,19 +139,16 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const confirmationDescription = errors.confirmation ? 'login-confirmation-error' : undefined
 
   return (
-    <main className="login-page" data-demo-only="true">
+    <main className="login-page">
       <header className="login-header">
         <AppLink className="login-brand" href="/" onNavigate={onNavigate}>PaperBridge</AppLink>
         <AppLink className="login-secondary-link" href="/library" onNavigate={onNavigate}>계정 없이 계속하기</AppLink>
       </header>
 
       <section className="login-card" aria-labelledby="login-title">
-        <div className="login-demo-banner" role="note" aria-label="로그인 및 가입 데모">
-          <div className="login-demo-banner-heading">
-            <span className="login-demo-chip">데모 모드</span>
-            <span>실제 요청은 전송되지 않습니다.</span>
-          </div>
-          <p>입력 검증, 키보드 포커스, 오류 재시도 흐름만 확인합니다.</p>
+        <div className="login-demo-banner" role="note" aria-label="로그인 및 가입">
+          <div className="login-demo-banner-heading"><span>안전한 계정 연결</span></div>
+          <p>인증 정보는 PaperBridge 서버로만 전송되며 화면이나 로그에 남기지 않습니다.</p>
         </div>
 
         <div className="login-tabs" role="tablist" aria-label="로그인 및 가입 방식">
@@ -185,15 +180,15 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
 
         <div className="login-panel" id="login-panel" role="tabpanel" tabIndex={0} aria-labelledby={creating ? 'signup-tab' : 'login-tab'}>
           <div className="login-heading">
-            <p className="login-kicker">계정 검증</p>
-            <h1 id="login-title">{creating ? '가입 검증 데모' : '로그인 검증 데모'}</h1>
-            <p>{creating ? '이메일과 10자 이상의 비밀번호를 입력해 가입 흐름을 확인하세요.' : '입력 오류와 다시 시도 흐름을 확인하는 로컬 데모입니다.'}</p>
+            <p className="login-kicker">PaperBridge 계정</p>
+            <h1 id="login-title">{creating ? '계정 만들기' : '로그인'}</h1>
+            <p>{creating ? '이메일과 10자 이상의 비밀번호로 계정을 만드세요.' : '계정에 연결해 문서와 설정을 이어서 사용하세요.'}</p>
           </div>
 
           {notice ? (
             <div className={`login-notice login-notice--${notice.tone}`}>
               <p ref={noticeRef} className="login-notice-message" role={notice.tone === 'error' ? 'alert' : 'status'} aria-live={notice.tone === 'error' ? 'assertive' : 'polite'} aria-atomic="true" tabIndex={-1}>{notice.message}</p>
-              {notice.retryable ? <button className="login-retry-button" type="button" onClick={retryDemo} disabled={pending}>{pending ? '다시 확인 중...' : '다시 시도'}</button> : null}
+              {notice.retryable ? <button className="login-retry-button" type="button" onClick={retryAuthentication} disabled={pending}>{pending ? '다시 요청 중...' : '다시 시도'}</button> : null}
             </div>
           ) : null}
 
@@ -201,7 +196,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             <div className="login-field">
               <label htmlFor="login-email">이메일 주소</label>
               <input ref={emailRef} id="login-email" className="login-input" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={pending} required aria-required="true" aria-invalid={Boolean(errors.email)} aria-describedby={emailDescription} aria-errormessage={errors.email ? 'login-email-error' : undefined} />
-              <p className="login-help" id="login-email-help">계정 정보는 이 데모에서 저장되지 않습니다.</p>
+              <p className="login-help" id="login-email-help">로그인과 계정 확인에 사용할 이메일입니다.</p>
               {errors.email ? <p className="login-error" id="login-email-error" role="alert">{errors.email}</p> : null}
             </div>
 
@@ -223,9 +218,9 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
               </div>
             ) : null}
 
-            <button className="login-submit-button" type="submit" disabled={pending}>{pending ? '데모 확인 중...' : creating ? '가입 데모 확인' : '로그인 데모 확인'}</button>
+            <button className="login-submit-button" type="submit" disabled={pending}>{pending ? '요청 중...' : creating ? '가입' : '로그인'}</button>
           </form>
-          <p className="login-footer-note">FE-015 로컬 검증 화면. 실제 계정이나 세션은 생성되지 않습니다.</p>
+          <p className="login-footer-note">세션은 안전한 HTTP 전용 쿠키로 유지됩니다.</p>
         </div>
       </section>
     </main>
